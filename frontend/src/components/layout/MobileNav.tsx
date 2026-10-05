@@ -1,46 +1,85 @@
-import React, { useState } from 'react';
-import { Menu, X, Boxes } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { Sidebar } from './Sidebar';
+import { SimsLogo } from '../ui/SimsLogo';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export const MobileNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+
+  // Close drawer on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  // Close drawer on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  // Lock body scroll while drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   return (
     <>
       {/* Mobile Top Header */}
-      <header className="lg:hidden flex items-center justify-between p-3 bg-forest text-white rounded-card mb-3 shadow-flat">
+      <header className="lg:hidden flex items-center justify-between p-3 bg-surface text-text rounded-card mb-3 border border-border shadow-card shrink-0 select-none">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-mint-primary text-forest-dark flex items-center justify-center font-bold text-sm">
-            <Boxes className="w-4 h-4 text-forest-dark" />
-          </div>
-          <div>
-            <span className="font-serif text-base font-medium tracking-tight">SIMS</span>
-            <span className="text-[10px] text-forest-border block -mt-1">
-              Sales & Inventory
-            </span>
-          </div>
+          <SimsLogo size={28} />
+          <span className="text-title tracking-tight text-text">
+            SIMS
+          </span>
         </div>
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-full hover:bg-white/10 text-forest-surface transition-colors"
-          aria-label="Toggle navigation"
-        >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+            aria-label="Toggle navigation"
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
-      {/* Drawer Overlay for Mobile */}
+      {/* Drawer Overlay for Mobile (<1024px) */}
       {isOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop with blur */}
           <div
-            className="fixed inset-0 bg-forest/50 backdrop-blur-xs transition-opacity duration-150"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-200"
             onClick={() => setIsOpen(false)}
+            aria-hidden="true"
           />
-          <div className="fixed inset-y-3 left-3 z-50 w-72 max-w-[calc(100vw-24px)] flex">
-            <div className="w-full flex" onClick={() => setIsOpen(false)}>
-              <Sidebar />
-            </div>
+
+          {/* Drawer content: fixed, full height (100dvh) */}
+          <div className="fixed inset-y-0 left-0 w-[260px] max-w-[85vw] h-[100dvh] bg-sidebar shadow-xl flex flex-col z-50 border-r border-border animate-in slide-in-from-left duration-200">
+            <Sidebar
+              isMobileDrawer={true}
+              onCloseMobileDrawer={() => setIsOpen(false)}
+            />
           </div>
         </div>
       )}

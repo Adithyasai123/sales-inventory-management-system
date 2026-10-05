@@ -35,47 +35,70 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  const showFooterButtons = Boolean(confirmLabel && confirmLabel.trim().length > 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest/40 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      {/* Click outside backdrop to close */}
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
+
       <div
-        className="w-full max-w-md bg-white rounded-card border border-forest-border shadow-flat p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-150"
+        className="relative z-10 w-full max-w-md bg-surface rounded-card border border-border shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-forest-surface flex items-center justify-center text-forest shrink-0">
-              <AlertCircle className="w-4 h-4 text-forest" />
+            <div className="w-8 h-8 rounded-full bg-surfaceAlt flex items-center justify-center text-text shrink-0">
+              <AlertCircle className="w-4 h-4 text-accent" />
             </div>
-            <h3 className="font-serif text-lg font-medium text-forest">{title}</h3>
+            <h3 className="text-title font-semibold">{title}</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-forest-muted hover:text-forest transition-colors p-1 rounded-full hover:bg-forest-surface"
+            className="text-muted hover:text-text transition-colors p-1.5 rounded-full hover:bg-surfaceAlt"
+            aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-xs text-forest-muted leading-relaxed">{description}</p>
+        {description && <p className="text-caption leading-relaxed text-muted">{description}</p>}
 
         {children && <div className="my-1">{children}</div>}
 
-        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-forest-border/60">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={variant}
-            size="sm"
-            onClick={onConfirm}
-            isLoading={isLoading}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
+        {showFooterButtons && (
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border">
+            {cancelLabel && (
+              <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
+                {cancelLabel}
+              </Button>
+            )}
+            <Button
+              variant={variant}
+              size="sm"
+              onClick={onConfirm}
+              isLoading={isLoading}
+            >
+              {confirmLabel}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

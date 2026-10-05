@@ -3,26 +3,258 @@
 @tailwind utilities;
 
 :root {
-  --color-forest: #0F2E2A;
-  --color-forest-dark: #0F3D33;
-  --color-forest-muted: #5B7A73;
-  --color-forest-border: #CFE7DC;
-  --color-forest-surface: #F1FAF6;
-  --color-forest-bg: #E9F6F0;
-  --color-mint: #BFEBD5;
-  --color-mint-200: #D6EFE2;
+  /* Sidebar width token: 240px fixed */
+  --sidebar-w: 240px;
+
+  /* Default CSS fallback variables (Blue & Navy Light Theme) */
+  --color-bg: #FFFFFF;
+  --color-bg-rgb: 255 255 255;
+  --color-sidebar: #DCEBFB;
+  --color-sidebar-rgb: 220 235 251;
+  --color-sidebarBorder: #C4D9F3;
+  --color-sidebarBorder-rgb: 196 217 243;
+  --color-sidebarText: #0B1B33;
+  --color-sidebarText-rgb: 11 27 51;
+  --color-sidebarIcon: #1F4E8C;
+  --color-sidebarIcon-rgb: 31 78 140;
+  --color-sidebarHover: #CFE2F8;
+  --color-sidebarHover-rgb: 207 226 248;
+
+  --color-surface: #EEF5FD;
+  --color-surface-rgb: 238 245 253;
+  --color-surfaceAlt: #E1ECFA;
+  --color-surfaceAlt-rgb: 225 236 250;
+  --color-border: #D3E3F8;
+  --color-border-rgb: 211 227 248;
+
+  --color-text: #0B1B33;
+  --color-text-rgb: 11 27 51;
+  --color-textMuted: #4A5D78;
+  --color-textMuted-rgb: 74 93 120;
+
+  --color-primary: #BBD6F8;
+  --color-primary-rgb: 187 214 248;
+  --color-primaryText: #0F2F5C;
+  --color-primaryText-rgb: 15 47 92;
+  --color-primarySoft: #D8E8FC;
+  --color-primarySoft-rgb: 216 232 252;
+
+  --color-accent: #0F3D7A;
+  --color-accent-rgb: 15 61 122;
+  --color-accentText: #FFFFFF;
+  --color-accentText-rgb: 255 255 255;
+
+  --color-navActiveBg: #0F3D7A;
+  --color-navActiveBg-rgb: 15 61 122;
+  --color-navActiveText: #FFFFFF;
+  --color-navActiveText-rgb: 255 255 255;
+
+  --color-chart1: #2F6FD0;
+  --color-chart2: #7FB0EA;
+  --color-chart3: #0F3D7A;
+  --color-chart4: #5E7A99;
+  --color-chart5: #BBD6F8;
+
+  --color-success: #2F6FD0;
+  --color-success-rgb: 47 111 208;
+  --color-successSoft: #D8E8FC;
+  --color-successSoft-rgb: 216 232 252;
+  --color-warning: #D97706;
+  --color-warning-rgb: 217 119 6;
+  --color-warningSoft: #FEF3C7;
+  --color-warningSoft-rgb: 254 243 199;
+  --color-danger: #D9383A;
+  --color-danger-rgb: 217 56 58;
+  --color-dangerSoft: #FEE2E2;
+  --color-dangerSoft-rgb: 254 226 226;
+
+  --shadow-card: 0 4px 12px -4px rgba(15, 61, 122, 0.18);
+}
+
+[data-theme="dark"] {
+  --color-bg: #0A1220;
+  --color-bg-rgb: 10 18 32;
+  --color-sidebar: #0D1830;
+  --color-sidebar-rgb: 13 24 48;
+  --color-sidebarBorder: #243A5F;
+  --color-sidebarBorder-rgb: 36 58 95;
+  --color-sidebarText: #F2F7FF;
+  --color-sidebarText-rgb: 242 247 255;
+  --color-sidebarIcon: #7FB0EA;
+  --color-sidebarIcon-rgb: 127 176 234;
+  --color-sidebarHover: #182A4A;
+  --color-sidebarHover-rgb: 24 42 74;
+
+  --color-surface: #12203A;
+  --color-surface-rgb: 18 32 58;
+  --color-surfaceAlt: #182A4A;
+  --color-surfaceAlt-rgb: 24 42 74;
+  --color-border: #243A5F;
+  --color-border-rgb: 36 58 95;
+
+  --color-text: #F2F7FF;
+  --color-text-rgb: 242 247 255;
+  --color-textMuted: #B4C2DC;
+  --color-textMuted-rgb: 180 194 220;
+
+  --color-primary: #6FA8F0;
+  --color-primary-rgb: 111 168 240;
+  --color-primaryText: #0A1220;
+  --color-primaryText-rgb: 10 18 32;
+  --color-primarySoft: #182A4A;
+  --color-primarySoft-rgb: 24 42 74;
+
+  --color-accent: #D6E6FF;
+  --color-accent-rgb: 214 230 255;
+  --color-accentText: #0A1220;
+  --color-accentText-rgb: 10 18 32;
+
+  --color-navActiveBg: #6FA8F0;
+  --color-navActiveBg-rgb: 111 168 240;
+  --color-navActiveText: #0A1220;
+  --color-navActiveText-rgb: 10 18 32;
+
+  --color-chart1: #6FA8F0;
+  --color-chart2: #3D75C9;
+  --color-chart3: #D6E6FF;
+  --color-chart4: #7C93B8;
+  --color-chart5: #2A4F8F;
+
+  --color-success: #6FA8F0;
+  --color-success-rgb: 111 168 240;
+  --color-successSoft: #182A4A;
+  --color-successSoft-rgb: 24 42 74;
+  --color-warning: #FBBF24;
+  --color-warning-rgb: 251 191 36;
+  --color-warningSoft: #452A0A;
+  --color-warningSoft-rgb: 69 42 10;
+  --color-danger: #F87171;
+  --color-danger-rgb: 248 113 113;
+  --color-dangerSoft: #451A1A;
+  --color-dangerSoft-rgb: 69 26 26;
+
+  --shadow-card: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* 150ms smooth transition on theme colors */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Focus rings: 2px accent ring with 2px offset on interactive elements */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
 }
 
 @layer base {
   body {
-    background-color: var(--color-forest-bg);
-    color: var(--color-forest);
+    background-color: var(--color-bg);
+    color: var(--color-text);
     font-family: 'Figtree', system-ui, sans-serif;
   }
 
-  h1, h2, h3, .font-serif {
+  h1, h2, h3, h4, h5, h6, .font-serif {
     font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 400;
+  }
+}
+
+@layer components {
+  /* Type Scale Tokens */
+  .text-display {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+
+  .text-title {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+    letter-spacing: normal;
+    color: var(--color-text);
+  }
+
+  .text-subtitle {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .text-body {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: 400;
+    color: var(--color-text);
+  }
+
+  .text-body-lg {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+    color: var(--color-text);
+  }
+
+  .text-label {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text);
+  }
+
+  .text-overline {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-textMuted);
+  }
+
+  .text-caption {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 400;
+    color: var(--color-textMuted);
+  }
+
+  .text-kpi {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 28px;
+    line-height: 32px;
     font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .text-btn {
+    font-family: 'Figtree', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
   }
 }
 
@@ -37,14 +269,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-forest-surface);
+  background: var(--color-surfaceAlt);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-forest-border);
+  background: var(--color-border);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-forest-muted);
+  background: var(--color-textMuted);
 }

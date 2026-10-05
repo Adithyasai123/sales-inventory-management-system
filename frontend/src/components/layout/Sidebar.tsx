@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { usePendingApprovals } from '../../hooks/useApprovals';
 import { UserMenu } from './UserMenu';
+import { SimsLogo } from '../ui/SimsLogo';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -12,12 +13,19 @@ import {
   CheckSquare,
   UserCheck,
   Sliders,
-  Boxes,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export const Sidebar: React.FC = () => {
-  const { user, isManager, isAdmin } = useAuth();
+interface SidebarProps {
+  isMobileDrawer?: boolean;
+  onCloseMobileDrawer?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  isMobileDrawer = false,
+  onCloseMobileDrawer,
+}) => {
+  const { user } = useAuth();
   const { data: pendingData } = usePendingApprovals({ page: 1, page_size: 1 });
   const pendingCount = pendingData?.total || 0;
 
@@ -78,38 +86,37 @@ export const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside className="w-64 bg-forest text-white rounded-card flex flex-col p-4 shadow-flat h-full shrink-0 select-none">
-      {/* Brand Header */}
-      <div className="flex items-center gap-3 px-3 py-3 mb-6 border-b border-white/10">
-        <div className="w-9 h-9 rounded-full bg-mint-primary text-forest-dark flex items-center justify-center font-bold text-base shrink-0 shadow-flat">
-          <Boxes className="w-5 h-5 text-forest-dark" />
-        </div>
-        <div>
-          <h1 className="font-serif text-lg font-medium tracking-tight text-white leading-tight">
-            SIMS
-          </h1>
-          <p className="text-[11px] text-forest-border font-medium">Sales & Inventory</p>
-        </div>
+    <aside
+      className={cn(
+        'bg-sidebar border-r border-border select-none flex flex-col overflow-hidden',
+        isMobileDrawer
+          ? 'h-full w-[240px] p-4'
+          : 'fixed top-0 left-0 h-[100dvh] w-[var(--sidebar-w)] rounded-none p-4 z-30'
+      )}
+    >
+      {/* Brand Header: Logo mark + SIMS on one line */}
+      <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-border shrink-0 px-1">
+        <SimsLogo size={32} />
+        <span className="text-title text-sidebarText">
+          SIMS
+        </span>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 flex flex-col gap-1.5 overflow-y-auto pr-1">
-        <div className="px-3 mb-2 text-[10px] font-medium tracking-wider uppercase text-forest-border">
-          Navigation
-        </div>
-
+      {/* Nav items in middle: 40px rows, 18px icons, no group labels */}
+      <nav className="flex-1 flex flex-col gap-1.5 overflow-hidden">
         {filteredNav.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={isMobileDrawer ? onCloseMobileDrawer : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center justify-between px-3.5 py-2.5 rounded-full text-xs font-medium transition-all duration-150',
+                  'flex items-center justify-between h-[40px] min-h-[40px] px-3.5 rounded-full text-body  transition-all duration-150',
                   isActive
-                    ? 'bg-mint-primary text-forest-dark shadow-flat'
-                    : 'text-forest-surface/80 hover:text-white hover:bg-forest-dark/40'
+                    ? 'bg-navActive text-navActiveText  shadow-card'
+                    : 'text-sidebarText/90 hover:text-sidebarText hover:bg-sidebarHover'
                 )
               }
             >
@@ -118,20 +125,20 @@ export const Sidebar: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <Icon
                       className={cn(
-                        'w-4 h-4 shrink-0 transition-colors',
-                        isActive ? 'text-forest-dark' : 'text-forest-border'
+                        'w-[18px] h-[18px] shrink-0 transition-colors',
+                        isActive ? 'text-navActiveText' : 'text-sidebarIcon'
                       )}
                     />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
 
                   {item.badge !== undefined && (
                     <span
                       className={cn(
-                        'px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
+                        'px-2 py-0.5 rounded-full text-[10px]  tabular-nums shrink-0',
                         isActive
-                          ? 'bg-forest text-mint-primary'
-                          : 'bg-mint-primary text-forest-dark'
+                          ? 'bg-primary text-primaryText'
+                          : 'bg-primary text-primaryText'
                       )}
                     >
                       {item.badge}
@@ -144,7 +151,7 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* User profile footer */}
+      {/* User / role / theme toggle / logout pinned bottom with mt-auto */}
       <UserMenu />
     </aside>
   );

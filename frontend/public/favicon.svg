@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    :root {
+      --bg-color: #BBD6F8;
+      --leaf-color: #0F3D7A;
+      --leaf-shadow: rgba(15, 61, 122, 0.25);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #182A4A;
+        --leaf-color: #6FA8F0;
+        --leaf-shadow: rgba(111, 168, 240, 0.25);
+      }
+    }
+    .rect { fill: var(--bg-color); }
+    .leaf { stroke: var(--leaf-color); fill: var(--leaf-shadow); }
+    .stem { stroke: var(--leaf-color); }
+  </style>
+  <rect class="rect" width="64" height="64" rx="16" />
+  <path
+    class="leaf"
+    d="M32 49 C24 49 20 44 20 34 C20 23 27 15 44 14 C44 31 39 49 32 49 Z"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    class="stem"
+    d="M17 50 C24 44 31 35 37 25"
+    stroke-width="3"
+    stroke-linecap="round"
+    fill="none"
+  />
+</svg>

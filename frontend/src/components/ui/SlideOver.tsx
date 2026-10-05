@@ -27,6 +27,18 @@ export const SlideOver: React.FC<SlideOverProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Lock body scroll while slideover is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const widthClasses = {
@@ -37,9 +49,9 @@ export const SlideOver: React.FC<SlideOverProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
+      {/* Backdrop with rich blur */}
       <div
-        className="fixed inset-0 bg-forest/40 backdrop-blur-sm transition-opacity duration-150"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-200 animate-in fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -47,23 +59,24 @@ export const SlideOver: React.FC<SlideOverProps> = ({
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10 pointer-events-none">
         <div
           className={cn(
-            'w-screen bg-white shadow-xl pointer-events-auto border-l border-forest-border flex flex-col transition-transform duration-150 ease-in-out',
+            'w-screen bg-surface shadow-2xl pointer-events-auto border-l border-border flex flex-col transition-transform duration-200 ease-in-out animate-in slide-in-from-right',
             widthClasses[width]
           )}
           role="dialog"
           aria-modal="true"
         >
           {/* Header */}
-          <div className="px-6 py-5 border-b border-forest-border flex items-start justify-between bg-forest-surface/60">
+          <div className="px-6 py-5 border-b border-border flex items-start justify-between bg-surfaceAlt/60">
             <div>
-              <h2 className="font-serif text-xl font-medium text-forest">{title}</h2>
+              <h2 className="text-title">{title}</h2>
               {subtitle && (
-                <p className="text-xs text-forest-muted mt-0.5">{subtitle}</p>
+                <p className="text-caption mt-0.5 text-muted">{subtitle}</p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="text-forest-muted hover:text-forest p-1.5 rounded-full hover:bg-forest-surface transition-colors"
+              className="text-muted hover:text-text p-1.5 rounded-full hover:bg-surfaceAlt transition-colors"
+              aria-label="Close drawer"
             >
               <X className="w-5 h-5" />
             </button>

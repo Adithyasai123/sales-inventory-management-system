@@ -1,44 +1,63 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, User as UserIcon, Shield } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   if (!user) return null;
 
-  const roleBadgeStyles: Record<string, string> = {
-    ADMIN: 'bg-white/20 text-white border-white/30',
-    MANAGER: 'bg-mint-primary text-forest-dark border-mint',
-    SALES: 'bg-forest-surface text-forest border-forest-border',
+  // Strip any parenthesized suffix (e.g. "(Manager)") and show pure name
+  const cleanName = (user.full_name || 'User').replace(/\s*\([^)]*\)/g, '').trim();
+
+  // Compute initials strictly from first letters of the first two words
+  const getInitials = (name: string) => {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return (parts[0]?.slice(0, 2) || 'U').toUpperCase();
   };
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-card bg-forest-dark/40 border border-white/10 mt-auto">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className="w-8 h-8 rounded-full bg-mint-primary text-forest-dark flex items-center justify-center font-medium text-xs shrink-0">
-          {user.full_name.charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-white truncate">{user.full_name}</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <span
-              className={`text-[10px] font-medium px-2 py-0.2 rounded-full border ${
-                roleBadgeStyles[user.role] || 'bg-white/10 text-white'
-              }`}
-            >
-              {user.role}
-            </span>
+    <div className="pt-3 border-t border-border mt-auto shrink-0 select-none">
+      <div className="flex items-center justify-between p-2 rounded-card bg-surface border border-border">
+        {/* 36px avatar ringed in border color: primary fill with ink/dark initials */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="w-9 h-9 rounded-full bg-primary text-primaryText ring-2 ring-border flex items-center justify-center text-caption shrink-0 select-none shadow-card"
+            title={cleanName}
+          >
+            {getInitials(cleanName)}
+          </div>
+
+          {/* Name & Role tag */}
+          <div className="min-w-0 flex flex-col justify-center">
+            <p className="text-caption text-subtitle truncate leading-tight" title={cleanName}>
+              {cleanName}
+            </p>
+            <div className="mt-1">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-surfaceAlt text-text border border-border/70 uppercase tracking-wide leading-none">
+                {user.role}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button
-        onClick={logout}
-        title="Logout"
-        className="text-forest-surface/70 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors"
-      >
-        <LogOut className="w-4 h-4" />
-      </button>
+        {/* Theme toggle & Logout side-by-side on the right */}
+        <div className="flex items-center gap-0.5 shrink-0 ml-1">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={logout}
+            title="Logout"
+            className="p-1.5 rounded-full text-muted hover:text-text hover:bg-surfaceAlt transition-colors"
+            aria-label="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

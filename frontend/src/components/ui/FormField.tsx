@@ -22,21 +22,21 @@ export const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={cn('flex flex-col gap-1.5 w-full', className)}>
       {label && (
-        <label className="text-xs font-medium text-forest flex items-center gap-1">
+        <label className="text-caption text-body flex items-center gap-1">
           {label}
-          {required && <span className="text-forest-dark font-bold">*</span>}
+          {required && <span className="text-danger">*</span>}
         </label>
       )}
 
       {children}
 
       {error ? (
-        <div className="flex items-center gap-1.5 text-xs text-forest mt-0.5">
-          <AlertCircle className="w-3.5 h-3.5 text-forest shrink-0" />
-          <span className="font-medium">{error}</span>
+        <div className="flex items-center gap-1.5 text-caption text-danger mt-0.5">
+          <AlertCircle className="w-3.5 h-3.5 text-danger shrink-0" />
+          <span className="">{error}</span>
         </div>
       ) : helperText ? (
-        <p className="text-xs text-forest-muted mt-0.5">{helperText}</p>
+        <p className="text-caption mt-0.5">{helperText}</p>
       ) : null}
     </div>
   );
@@ -52,10 +52,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         className={cn(
-          'w-full px-3.5 py-2 text-sm bg-white text-forest placeholder:text-forest-muted/60 border rounded-input transition-colors duration-150',
-          'border-forest-border focus:outline-none focus:border-forest-muted focus:ring-1 focus:ring-forest-muted',
-          hasError && 'border-forest ring-1 ring-forest',
-          props.disabled && 'bg-forest-surface text-forest-muted/60 cursor-not-allowed',
+          'w-full px-3.5 py-2 text-body bg-bg text-text placeholder:text-muted/60 border rounded-input transition-colors duration-150',
+          'border-border focus:outline-none focus:border-chart1 focus:ring-1 focus:ring-chart1',
+          hasError && 'border-danger ring-1 ring-danger',
+          props.disabled && 'bg-surfaceAlt text-muted/60 cursor-not-allowed',
           className
         )}
         {...props}
@@ -75,10 +75,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <select
         ref={ref}
         className={cn(
-          'w-full px-3.5 py-2 text-sm bg-white text-forest border rounded-input transition-colors duration-150',
-          'border-forest-border focus:outline-none focus:border-forest-muted focus:ring-1 focus:ring-forest-muted',
-          hasError && 'border-forest ring-1 ring-forest',
-          props.disabled && 'bg-forest-surface text-forest-muted/60 cursor-not-allowed',
+          'w-full px-3.5 py-2 text-body bg-bg text-text border rounded-input transition-colors duration-150',
+          'border-border focus:outline-none focus:border-chart1 focus:ring-1 focus:ring-chart1',
+          hasError && 'border-danger ring-1 ring-danger',
+          props.disabled && 'bg-surfaceAlt text-muted/60 cursor-not-allowed',
           className
         )}
         {...props}
@@ -100,10 +100,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         ref={ref}
         className={cn(
-          'w-full px-3.5 py-2 text-sm bg-white text-forest placeholder:text-forest-muted/60 border rounded-input transition-colors duration-150 min-h-[80px]',
-          'border-forest-border focus:outline-none focus:border-forest-muted focus:ring-1 focus:ring-forest-muted',
-          hasError && 'border-forest ring-1 ring-forest',
-          props.disabled && 'bg-forest-surface text-forest-muted/60 cursor-not-allowed',
+          'w-full px-3.5 py-2 text-body bg-bg text-text placeholder:text-muted/60 border rounded-input transition-colors duration-150 min-h-[80px]',
+          'border-border focus:outline-none focus:border-chart1 focus:ring-1 focus:ring-chart1',
+          hasError && 'border-danger ring-1 ring-danger',
+          props.disabled && 'bg-surfaceAlt text-muted/60 cursor-not-allowed',
           className
         )}
         {...props}

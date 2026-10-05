@@ -20,8 +20,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-forest-bg gap-3">
-        <div className="w-12 h-12 rounded-full bg-mint-primary animate-pulse flex items-center justify-center text-forest-dark font-serif text-xl font-bold">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-accent-bg gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary animate-pulse flex items-center justify-center text-text text-title">
           S
         </div>
         <Skeleton className="h-4 w-48" />
@@ -36,13 +36,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-12 h-12 rounded-full bg-forest-surface flex items-center justify-center text-forest mb-3">
-          <ShieldAlert className="w-6 h-6 text-forest" />
+        <div className="w-12 h-12 rounded-full bg-surfaceAlt flex items-center justify-center text-text mb-3">
+          <ShieldAlert className="w-6 h-6 text-text" />
         </div>
-        <h2 className="font-serif text-xl font-medium text-forest mb-1">
+        <h2 className="text-title mb-1">
           Access Restricted
         </h2>
-        <p className="text-xs text-forest-muted max-w-sm mb-4">
+        <p className="text-caption max-w-sm mb-4">
           Your current role (<strong>{user.role}</strong>) does not have permission
           to access this module.
         </p>

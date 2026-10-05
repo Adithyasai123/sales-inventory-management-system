@@ -21,11 +21,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   className,
   size = 'md',
 }) => {
-  const normStatus = status.toUpperCase();
+  const normStatus = status ? status.toUpperCase() : '';
 
   const sizeClasses = {
-    sm: 'text-xs px-2.5 py-0.5 gap-1 font-medium',
-    md: 'text-xs px-3 py-1 gap-1.5 font-medium',
+    sm: 'text-[11px] px-2.5 py-0.5 gap-1 font-medium',
+    md: 'text-caption px-3 py-1 gap-1.5 font-medium',
   };
 
   const iconSizes = {
@@ -39,12 +39,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-white text-forest border border-dashed border-forest-border select-none shadow-flat',
+            'inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 select-none',
             sizeClasses[size],
             className
           )}
         >
-          <Clock className={cn(iconSizes[size], 'text-forest-muted')} />
+          <Clock className={cn(iconSizes[size], 'text-amber-600 dark:text-amber-400')} />
           <span>Pending Approval</span>
         </span>
       );
@@ -54,12 +54,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-mint-primary text-forest-dark border border-mint select-none',
+            'inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 select-none',
             sizeClasses[size],
             className
           )}
         >
-          <CheckCircle2 className={cn(iconSizes[size], 'text-forest-dark')} />
+          <CheckCircle2 className={cn(iconSizes[size], 'text-emerald-600 dark:text-emerald-400')} />
           <span>{normStatus === 'COMPLETED' ? 'Completed' : 'Approved'}</span>
         </span>
       );
@@ -68,12 +68,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-forest text-mint-primary border border-forest select-none',
+            'inline-flex items-center rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 select-none',
             sizeClasses[size],
             className
           )}
         >
-          <XCircle className={cn(iconSizes[size], 'text-mint-primary')} />
+          <XCircle className={cn(iconSizes[size], 'text-rose-600 dark:text-rose-400')} />
           <span>Rejected</span>
         </span>
       );
@@ -82,12 +82,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-forest text-mint-200 border border-forest select-none',
+            'inline-flex items-center rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 select-none',
             sizeClasses[size],
             className
           )}
         >
-          <Ban className={cn(iconSizes[size], 'text-mint-200')} />
+          <Ban className={cn(iconSizes[size], 'text-rose-600 dark:text-rose-400')} />
           <span>Cancelled</span>
         </span>
       );
@@ -96,12 +96,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-forest-surface text-forest-muted border border-forest-border select-none',
+            'inline-flex items-center rounded-full bg-surfaceAlt text-muted border border-border select-none',
             sizeClasses[size],
             className
           )}
         >
-          <FileEdit className={cn(iconSizes[size], 'text-forest-muted')} />
+          <FileEdit className={cn(iconSizes[size], 'text-muted')} />
           <span>Draft</span>
         </span>
       );
@@ -110,12 +110,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       return (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-white text-forest border border-forest-border select-none',
+            'inline-flex items-center rounded-full bg-surfaceAlt text-text border border-border select-none',
             sizeClasses[size],
             className
           )}
         >
-          <AlertCircle className={cn(iconSizes[size], 'text-forest-muted')} />
+          <AlertCircle className={cn(iconSizes[size], 'text-muted')} />
           <span>{status}</span>
         </span>
       );

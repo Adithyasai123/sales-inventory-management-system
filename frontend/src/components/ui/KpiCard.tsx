@@ -29,15 +29,15 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       className={cn(
         'rounded-card p-5 border flex flex-col justify-between transition-all duration-150',
         isHero
-          ? 'bg-mint-primary text-forest-dark border-mint'
-          : 'bg-white text-forest border-forest-border shadow-flat'
+          ? 'bg-primary text-primaryText border-primary/50'
+          : 'bg-surface text-text border-border shadow-card'
       )}
     >
       <div className="flex items-center justify-between mb-3">
         <span
           className={cn(
-            'text-xs font-medium tracking-wide uppercase',
-            isHero ? 'text-forest-dark/80' : 'text-forest-muted'
+            'text-label',
+            isHero ? 'text-primaryText/80' : 'text-muted'
           )}
         >
           {title}
@@ -45,7 +45,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         <div
           className={cn(
             'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-            isHero ? 'bg-white/40 text-forest-dark' : 'bg-forest-surface text-forest'
+            isHero ? 'bg-primaryText/10 text-primaryText' : 'bg-surfaceAlt text-text'
           )}
         >
           {icon}
@@ -56,27 +56,27 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         {isLoading ? (
           <Skeleton className="h-8 w-24 mb-1" />
         ) : (
-          <div className="font-serif text-3xl font-medium tabular-nums tracking-tight">
+          <div className="text-kpi">
             {value}
           </div>
         )}
 
         {(subtitle || trend) && (
-          <div className="flex items-center gap-2 mt-2 text-xs">
+          <div className="flex items-center gap-2 mt-2 text-caption">
             {trend && (
               <span
                 className={cn(
-                  'font-medium px-2 py-0.5 rounded-full',
+                  ' px-2 py-0.5 rounded-full',
                   isHero
-                    ? 'bg-white/60 text-forest-dark'
-                    : 'bg-forest-surface text-forest-muted'
+                    ? 'bg-primaryText/15 text-primaryText'
+                    : 'bg-surfaceAlt text-muted'
                 )}
               >
                 {trend.value}
               </span>
             )}
             {subtitle && (
-              <span className={isHero ? 'text-forest-dark/70' : 'text-forest-muted'}>
+              <span className={isHero ? 'text-primaryText/70' : 'text-muted'}>
                 {subtitle}
               </span>
             )}

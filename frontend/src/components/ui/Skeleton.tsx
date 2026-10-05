@@ -6,7 +6,7 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
 export const Skeleton: React.FC<SkeletonProps> = ({ className, ...props }) => {
   return (
     <div
-      className={cn('animate-pulse rounded-input bg-mint-200', className)}
+      className={cn('animate-pulse rounded-input bg-primarySoft', className)}
       {...props}
     />
   );

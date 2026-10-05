@@ -22,30 +22,30 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-full transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-forest-muted focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+    'inline-flex items-center justify-center text-btn transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
 
   const variants = {
-    // Soft, low-contrast mint primary with deep-forest text
+    // Primary action button: ink/accent fill with white/dark text, 8px radius
     primary:
-      'bg-mint-primary text-forest-dark hover:bg-mint-200 border border-transparent shadow-flat',
-    // Forest ink button
+      'bg-navActive text-navActiveText hover:opacity-95 border border-transparent shadow-card rounded-btn',
+    // Alias for primary
     forest:
-      'bg-forest text-mint-primary hover:bg-forest-dark border border-transparent shadow-flat',
-    // Outline button
+      'bg-navActive text-navActiveText hover:opacity-95 border border-transparent shadow-card rounded-btn',
+    // Secondary outline button: 1px border, text-label uppercase, 6px radius
     outline:
-      'bg-transparent text-forest border border-forest-border hover:bg-forest-surface',
+      'bg-transparent text-text border border-border hover:bg-surfaceAlt text-label rounded-btn-sm',
     // Ghost button
     ghost:
-      'bg-transparent text-forest hover:bg-forest-surface hover:text-forest-dark',
+      'bg-transparent text-text hover:bg-surfaceAlt text-btn rounded-btn',
     // Destructive action
     danger:
-      'bg-forest text-mint-200 border border-forest-dark hover:bg-forest-dark',
+      'bg-danger text-accentText border border-transparent shadow-card rounded-btn',
   };
 
   const sizes = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
-    md: 'text-sm px-4 py-2 gap-2',
-    lg: 'text-base px-6 py-2.5 gap-2.5',
+    sm: 'h-8 text-[12px] px-3 gap-1.5 leading-none uppercase tracking-[0.04em]',
+    md: 'h-10 text-[14px] px-4 gap-2 leading-tight',
+    lg: 'h-12 text-[16px] px-6 gap-2.5 leading-tight',
   };
 
   return (
