@@ -47,37 +47,37 @@ def seed_database() -> None:
         users_data = [
             {
                 "email": "admin@sims.local",
-                "full_name": "Eleanor Vance (Admin)",
+                "full_name": "Eleanor Vance",
                 "password": "Admin@123456",
                 "role": UserRole.ADMIN,
             },
             {
                 "email": "admin@sims.com",
-                "full_name": "Eleanor Vance (Admin)",
+                "full_name": "Eleanor Vance",
                 "password": "Admin@123456",
                 "role": UserRole.ADMIN,
             },
             {
                 "email": "manager@sims.local",
-                "full_name": "Marcus Sterling (Manager)",
+                "full_name": "Marcus Sterling",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
             },
             {
                 "email": "manager@sims.com",
-                "full_name": "Marcus Sterling (Manager)",
+                "full_name": "Marcus Sterling",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
             },
             {
                 "email": "sales@sims.local",
-                "full_name": "Sarah Connor (Sales Rep)",
+                "full_name": "Sarah Connor",
                 "password": "Sales@123456",
                 "role": UserRole.SALES,
             },
             {
                 "email": "sales@sims.com",
-                "full_name": "Sarah Connor (Sales Rep)",
+                "full_name": "Sarah Connor",
                 "password": "Sales@123456",
                 "role": UserRole.SALES,
             },
