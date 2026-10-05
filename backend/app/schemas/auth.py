@@ -1,0 +1,40 @@
+import re
+from pydantic import BaseModel, Field, field_validator
+from app.models.user import UserRole
+
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., max_length=255)
+    password: str = Field(..., min_length=1)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_REGEX.match(v):
+            raise ValueError("Invalid email address format")
+        return v
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class UserMeResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    role: UserRole
+    is_active: bool
+
+    class Config:
+        from_attributes = True
