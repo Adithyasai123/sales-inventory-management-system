@@ -8,6 +8,7 @@ export function usePendingApprovals(params?: { page?: number; page_size?: number
   return useQuery({
     queryKey: ['approvals', 'pending', params],
     queryFn: () => approvalsApi.listPending(params),
+    refetchInterval: 5000,
   });
 }
 

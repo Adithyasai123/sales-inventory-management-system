@@ -89,10 +89,10 @@ export const CustomersPage: React.FC = () => {
       header: 'Customer',
       render: (c) => (
         <div>
-          <span className="font-medium text-forest block">{c.name}</span>
+          <span className="text-body block">{c.name}</span>
           {c.company && (
-            <span className="text-[11px] text-forest-muted flex items-center gap-1 mt-0.5">
-              <Building className="w-3 h-3 text-forest-muted/70" /> {c.company}
+            <span className="text-caption flex items-center gap-1 mt-0.5">
+              <Building className="w-3 h-3 text-muted/70" /> {c.company}
             </span>
           )}
         </div>
@@ -102,13 +102,13 @@ export const CustomersPage: React.FC = () => {
       key: 'email',
       header: 'Contact',
       render: (c) => (
-        <div className="flex flex-col gap-0.5 text-xs">
-          <span className="flex items-center gap-1 text-forest">
-            <Mail className="w-3 h-3 text-forest-muted" /> {c.email}
+        <div className="flex flex-col gap-0.5 text-caption">
+          <span className="flex items-center gap-1 text-text">
+            <Mail className="w-3 h-3 text-muted" /> {c.email}
           </span>
           {c.phone && (
-            <span className="flex items-center gap-1 text-[11px] text-forest-muted tabular-nums">
-              <Phone className="w-3 h-3 text-forest-muted/70" /> {c.phone}
+            <span className="flex items-center gap-1 text-caption tabular-nums">
+              <Phone className="w-3 h-3 text-muted/70" /> {c.phone}
             </span>
           )}
         </div>
@@ -118,7 +118,7 @@ export const CustomersPage: React.FC = () => {
       key: 'location',
       header: 'Location',
       render: (c) => (
-        <span className="text-xs text-forest-muted">
+        <span className="text-caption">
           {[c.city, c.country].filter(Boolean).join(', ') || '-'}
         </span>
       ),
@@ -128,10 +128,10 @@ export const CustomersPage: React.FC = () => {
       header: 'Status',
       render: (c) => (
         <span
-          className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
             c.is_active
-              ? 'bg-mint-primary text-forest-dark border-mint'
-              : 'bg-forest-surface text-forest-muted border-forest-border'
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+              : 'bg-surfaceAlt text-muted border-border'
           }`}
         >
           {c.is_active ? 'Active' : 'Inactive'}
@@ -145,14 +145,14 @@ export const CustomersPage: React.FC = () => {
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => handleOpenEdit(c)}
-            className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+            className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
             title="Edit Customer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setDeletingCustomer(c)}
-            className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+            className="p-1.5 rounded-full hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
             title="Delete Customer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -163,7 +163,7 @@ export const CustomersPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full">
       <PageHeader
         title="Customer Directory"
         subtitle="Manage client contact records, billing entities, and order affiliations."
@@ -268,7 +268,7 @@ export const CustomersPage: React.FC = () => {
             </FormField>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-forest-border">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button
               type="button"
               variant="outline"

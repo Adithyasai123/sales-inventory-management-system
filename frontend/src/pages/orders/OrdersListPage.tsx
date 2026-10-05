@@ -35,17 +35,17 @@ export const OrdersListPage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Order #',
-      className: 'font-mono text-[11px] font-medium text-forest',
+      className: 'font-mono text-[11px] text-body ',
     },
     {
       key: 'customer_name',
       header: 'Customer',
-      render: (o) => <span className="font-medium text-forest">{o.customer_name}</span>,
+      render: (o) => <span className="text-body">{o.customer_name}</span>,
     },
     {
       key: 'creator_name',
       header: 'Created By',
-      render: (o) => <span className="text-forest-muted text-xs">{o.creator_name}</span>,
+      render: (o) => <span className="text-muted text-caption">{o.creator_name}</span>,
     },
     {
       key: 'status',
@@ -55,13 +55,13 @@ export const OrdersListPage: React.FC = () => {
     {
       key: 'total_amount',
       header: 'Total Amount',
-      className: 'tabular-nums font-medium text-forest-dark',
+      className: 'tabular-nums text-body ',
       render: (o) => formatCurrency(o.total_amount),
     },
     {
       key: 'created_at',
       header: 'Date',
-      className: 'text-forest-muted text-[11px]',
+      className: 'text-muted text-[11px]',
       render: (o) => formatDate(o.created_at),
     },
     {
@@ -71,7 +71,7 @@ export const OrdersListPage: React.FC = () => {
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => setSelectedOrderId(o.id)}
-            className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+            className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
             title="View Details"
           >
             <Eye className="w-3.5 h-3.5" />
@@ -79,7 +79,7 @@ export const OrdersListPage: React.FC = () => {
           {['DRAFT', 'PENDING_APPROVAL'].includes(o.status) && (
             <button
               onClick={() => setCancellingOrder(o)}
-              className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+              className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
               title="Cancel Order"
             >
               <Ban className="w-3.5 h-3.5" />
@@ -91,7 +91,7 @@ export const OrdersListPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full">
       <PageHeader
         title="Sales Orders"
         subtitle="Track order processing lifecycles, stock verification, and approval statuses."
@@ -131,7 +131,7 @@ export const OrdersListPage: React.FC = () => {
                 setStatusFilter(e.target.value as any);
                 setPage(1);
               }}
-              className="px-3 py-1.5 rounded-full text-xs font-medium border border-forest-border bg-white text-forest focus:outline-none"
+              className="px-3 py-1.5 rounded-full text-caption border border-border bg-surface text-text focus:outline-none focus:ring-1 focus:ring-chart1"
             >
               <option value="">All Statuses</option>
               <option value="PENDING_APPROVAL">Pending Approval</option>
@@ -153,23 +153,23 @@ export const OrdersListPage: React.FC = () => {
       >
         {isLoadingDetail || !orderDetail ? (
           <div className="flex flex-col gap-3 py-4">
-            <div className="h-6 w-32 bg-mint-200 animate-pulse rounded-full" />
-            <div className="h-24 w-full bg-mint-200 animate-pulse rounded-card" />
+            <div className="h-6 w-32 bg-primarySoft animate-pulse rounded-full" />
+            <div className="h-24 w-full bg-primarySoft animate-pulse rounded-card" />
           </div>
         ) : (
           <div className="flex flex-col gap-6">
             {/* Top Status & Customer Overview */}
-            <div className="p-4 rounded-card bg-forest-surface border border-forest-border/80 flex items-center justify-between">
+            <div className="p-4 rounded-card bg-surfaceAlt border border-border flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-medium text-forest-muted block">Status</span>
+                <span className="text-[11px] text-muted block">Status</span>
                 <div className="mt-1">
                   <StatusBadge status={orderDetail.status} />
                 </div>
               </div>
 
               <div className="text-right">
-                <span className="text-[11px] font-medium text-forest-muted block">Total Value</span>
-                <span className="font-serif text-xl font-medium text-forest-dark tabular-nums block mt-0.5">
+                <span className="text-[11px] text-muted block">Total Value</span>
+                <span className="text-title tabular-nums block mt-0.5">
                   {formatCurrency(orderDetail.total_amount)}
                 </span>
               </div>
@@ -177,29 +177,29 @@ export const OrdersListPage: React.FC = () => {
 
             {/* Customer Details */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-muted mb-2">
+              <h3 className="text-caption uppercase tracking-wider text-muted mb-2">
                 Customer Information
               </h3>
-              <div className="p-3.5 rounded-input bg-white border border-forest-border/60 text-xs flex flex-col gap-1 text-forest">
-                <span className="font-medium text-sm">{orderDetail.customer?.name}</span>
-                <span className="text-forest-muted">{orderDetail.customer?.email}</span>
+              <div className="p-3.5 rounded-input bg-surfaceAlt/60 border border-border text-caption flex flex-col gap-1 text-text">
+                <span className="text-body">{orderDetail.customer?.name}</span>
+                <span className="text-muted">{orderDetail.customer?.email}</span>
                 {orderDetail.customer?.company && (
-                  <span className="text-forest-muted">{orderDetail.customer.company}</span>
+                  <span className="text-muted">{orderDetail.customer.company}</span>
                 )}
                 {orderDetail.customer?.address && (
-                  <span className="text-forest-muted">{orderDetail.customer.address}</span>
+                  <span className="text-muted">{orderDetail.customer.address}</span>
                 )}
               </div>
             </div>
 
             {/* Line Items */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-muted mb-2">
+              <h3 className="text-caption uppercase tracking-wider text-muted mb-2">
                 Order Items ({orderDetail.items.length})
               </h3>
-              <div className="border border-forest-border rounded-input overflow-hidden">
-                <table className="w-full text-left text-xs text-forest">
-                  <thead className="bg-forest-surface/70 border-b border-forest-border text-[11px] font-medium text-forest-muted">
+              <div className="border border-border rounded-input overflow-hidden">
+                <table className="w-full text-left text-caption text-text">
+                  <thead className="bg-surfaceAlt border-b border-border text-[11px] text-muted">
                     <tr>
                       <th className="px-3 py-2">Item</th>
                       <th className="px-3 py-2 text-right">Qty</th>
@@ -211,8 +211,8 @@ export const OrdersListPage: React.FC = () => {
                     {orderDetail.items.map((item) => (
                       <tr key={item.id}>
                         <td className="px-3 py-2.5">
-                          <span className="font-medium block">{item.product_name}</span>
-                          <span className="font-mono text-[10px] text-forest-muted">
+                          <span className="block">{item.product_name}</span>
+                          <span className="font-mono text-[10px] text-muted">
                             {item.product_sku}
                           </span>
                         </td>
@@ -220,7 +220,7 @@ export const OrdersListPage: React.FC = () => {
                         <td className="px-3 py-2.5 text-right tabular-nums">
                           {formatCurrency(item.unit_price)}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-medium tabular-nums text-forest-dark">
+                        <td className="px-3 py-2.5 text-right tabular-nums text-text">
                           {formatCurrency(item.total_price)}
                         </td>
                       </tr>
@@ -231,22 +231,22 @@ export const OrdersListPage: React.FC = () => {
             </div>
 
             {/* Financial Summary */}
-            <div className="p-4 rounded-card bg-forest-surface border border-forest-border/80 flex flex-col gap-1.5 text-xs">
-              <div className="flex justify-between text-forest-muted">
+            <div className="p-4 rounded-card bg-surfaceAlt border border-border flex flex-col gap-1.5 text-caption">
+              <div className="flex justify-between text-muted">
                 <span>Subtotal:</span>
-                <span className="tabular-nums font-medium text-forest">
+                <span className="tabular-nums text-body">
                   {formatCurrency(orderDetail.subtotal)}
                 </span>
               </div>
-              <div className="flex justify-between text-forest-muted">
+              <div className="flex justify-between text-muted">
                 <span>Tax ({orderDetail.tax_rate}%):</span>
-                <span className="tabular-nums font-medium text-forest">
+                <span className="tabular-nums text-body">
                   {formatCurrency(orderDetail.tax_amount)}
                 </span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-forest-border font-serif text-sm font-medium text-forest-dark">
+              <div className="flex justify-between pt-2 border-t border-border text-body">
                 <span>Total Amount:</span>
-                <span className="tabular-nums font-bold">
+                <span className="tabular-nums">
                   {formatCurrency(orderDetail.total_amount)}
                 </span>
               </div>
@@ -255,18 +255,18 @@ export const OrdersListPage: React.FC = () => {
             {/* Approval History Timeline */}
             {orderDetail.approvals && orderDetail.approvals.length > 0 && (
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-forest-muted mb-2">
+                <h3 className="text-caption uppercase tracking-wider text-muted mb-2">
                   Approval Audit Trail
                 </h3>
                 <div className="flex flex-col gap-2">
                   {orderDetail.approvals.map((appr) => (
                     <div
                       key={appr.id}
-                      className="p-3 rounded-input bg-white border border-forest-border text-xs flex flex-col gap-1"
+                      className="p-3 rounded-input bg-surface border border-border text-caption flex flex-col gap-1"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-forest">{appr.approver_name}</span>
-                        <span className="text-[10px] text-forest-muted tabular-nums">
+                        <span className="text-body">{appr.approver_name}</span>
+                        <span className="text-[10px] text-muted tabular-nums">
                           {formatDate(appr.decided_at)}
                         </span>
                       </div>
@@ -274,7 +274,7 @@ export const OrdersListPage: React.FC = () => {
                         <StatusBadge status={appr.decision} size="sm" />
                       </div>
                       {appr.comment && (
-                        <p className="text-forest-muted italic mt-1 bg-forest-surface p-2 rounded-input">
+                        <p className="text-muted italic mt-1 bg-surfaceAlt p-2 rounded-input">
                           "{appr.comment}"
                         </p>
                       )}

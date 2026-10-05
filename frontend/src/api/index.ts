@@ -6,7 +6,13 @@ import { Product, ProductInput, StockAdjustPayload } from '../types/product';
 import { SalesOrder, OrderDetail, CreateOrderPayload, OrderStatus } from '../types/order';
 import { ApprovalActionPayload } from '../types/approval';
 import { InventoryMovement, LowStockAlert, MovementType } from '../types/inventory';
-import { DashboardSummary } from '../types/dashboard';
+import {
+  DashboardSummary,
+  TopCustomer,
+  InventoryHealthItem,
+  ApprovalStats,
+  MovementTrendPoint,
+} from '../types/dashboard';
 import { SystemSetting, ThresholdUpdatePayload } from '../types/setting';
 
 export const authApi = {
@@ -139,8 +145,24 @@ export const inventoryApi = {
 };
 
 export const dashboardApi = {
-  getSummary: async (): Promise<DashboardSummary> => {
-    const { data } = await apiClient.get<DashboardSummary>('/dashboard/summary');
+  getSummary: async (range: number = 30): Promise<DashboardSummary> => {
+    const { data } = await apiClient.get<DashboardSummary>('/dashboard/summary', { params: { range } });
+    return data;
+  },
+  getTopCustomers: async (range: number = 30): Promise<TopCustomer[]> => {
+    const { data } = await apiClient.get<TopCustomer[]>('/dashboard/top-customers', { params: { range } });
+    return data;
+  },
+  getInventoryHealth: async (range: number = 30): Promise<InventoryHealthItem[]> => {
+    const { data } = await apiClient.get<InventoryHealthItem[]>('/dashboard/inventory-health', { params: { range } });
+    return data;
+  },
+  getApprovalStats: async (range: number = 30): Promise<ApprovalStats> => {
+    const { data } = await apiClient.get<ApprovalStats>('/dashboard/approval-stats', { params: { range } });
+    return data;
+  },
+  getMovementsTrend: async (range: number = 14): Promise<MovementTrendPoint[]> => {
+    const { data } = await apiClient.get<MovementTrendPoint[]>('/dashboard/movements-trend', { params: { range } });
     return data;
   },
 };

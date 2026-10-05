@@ -18,7 +18,7 @@ export function useUpdateThreshold() {
     mutationFn: (payload: ThresholdUpdatePayload) => settingsApi.updateThreshold(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      toast.success(`Approval threshold updated to $${parseFloat(data.value).toLocaleString()}`);
+      toast.success(`Approval threshold updated to ₹${parseFloat(data.value).toLocaleString('en-IN')}`);
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));

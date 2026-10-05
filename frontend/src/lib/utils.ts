@@ -9,12 +9,57 @@ export function formatCurrency(value: number | string | undefined | null): strin
   if (value === undefined || value === null) return '₹0.00';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '₹0.00';
+
+  const absNum = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+
+  if (absNum >= 10000000) {
+    const cr = absNum / 10000000;
+    const formatted = cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} Cr`;
+  }
+
+  if (absNum >= 100000) {
+    const lakh = absNum / 100000;
+    const formatted = lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} L`;
+  }
+
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(num);
+}
+
+export function formatCompactCurrency(value: number | string | undefined | null): string {
+  if (value === undefined || value === null) return '₹0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '₹0';
+
+  const absNum = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+
+  if (absNum >= 10000000) {
+    const cr = absNum / 10000000;
+    const formatted = cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} Cr`;
+  }
+
+  if (absNum >= 100000) {
+    const lakh = absNum / 100000;
+    const formatted = lakh % 1 === 0 ? lakh.toFixed(0) : lakh.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} L`;
+  }
+
+  if (absNum >= 1000) {
+    const k = absNum / 1000;
+    const formatted = k % 1 === 0 ? k.toFixed(0) : k.toFixed(1).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted}k`;
+  }
+
+  return `${sign}₹${Math.round(absNum).toLocaleString('en-IN')}`;
 }
 
 export function formatDate(dateString: string | undefined | null): string {

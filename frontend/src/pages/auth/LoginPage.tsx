@@ -3,7 +3,22 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { FormField, Input } from '../../components/ui/FormField';
-import { Boxes, ShieldCheck, UserCheck, Briefcase } from 'lucide-react';
+import { SimsLogo } from '../../components/ui/SimsLogo';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import {
+  ShieldCheck,
+  UserCheck,
+  Briefcase,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Layers,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
@@ -13,7 +28,9 @@ export const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,110 +47,264 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
+  const handleQuickFill = (role: string, demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
     setPassword(demoPass);
+    setSelectedRole(role);
     setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-forest-bg flex flex-col items-center justify-center p-4">
-      {/* Brand Icon Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 rounded-full bg-mint-primary text-forest-dark flex items-center justify-center font-bold text-lg shadow-flat">
-          <Boxes className="w-6 h-6 text-forest-dark" />
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-bg text-text selection:bg-accent selection:text-white">
+      {/* LEFT SIDE: Enterprise Stock Imagery & Brand Showcase (Desktop/Tablet Large) */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 relative overflow-hidden bg-slate-950 flex-col justify-between p-10 xl:p-14">
+        {/* Background Stock Photo with Overlay */}
+        <img
+          src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&q=80"
+          alt="Modern smart warehouse logistics"
+          className="absolute inset-0 w-full h-full object-cover object-center transform scale-105 transition-transform duration-1000 ease-out hover:scale-100 opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#061120] via-[#0A1B33]/80 to-[#0A1B33]/60 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#061120]/90 via-transparent to-transparent" />
+
+        {/* Top Branding */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <SimsLogo size={42} className="shadow-lg" />
+            <div>
+              <span className="text-xl font-bold text-white tracking-wide block leading-none font-serif">
+                SIMS
+              </span>
+              <span className="text-[11px] text-blue-200/80 uppercase tracking-wider block mt-1 font-medium">
+                Sales &amp; Inventory Management
+              </span>
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-blue-100 text-xs backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-medium tracking-wide">System Operational</span>
+          </div>
         </div>
-        <div>
-          <h1 className="font-serif text-2xl font-medium tracking-tight text-forest leading-none">
-            SIMS
-          </h1>
-          <p className="text-xs text-forest-muted mt-1">Sales & Inventory Management</p>
+
+        {/* Bottom Showcase Content */}
+        <div className="relative z-10 space-y-6 max-w-xl my-auto pt-16">
+          <div className="space-y-3">
+            <div className="inline-block px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-medium uppercase tracking-wider">
+              Enterprise Ready
+            </div>
+            <h2 className="text-3xl xl:text-4xl font-semibold text-white leading-tight font-serif">
+              Intelligent Inventory Control &amp; Sales Orchestration.
+            </h2>
+            <p className="text-blue-100/80 text-sm xl:text-base leading-relaxed">
+              Track multi-warehouse stock velocity in real-time, enforce automated manager approval
+              thresholds, and accelerate fulfillment cycles.
+            </p>
+          </div>
+
+          {/* Feature Highlights Glass Cards */}
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            <div className="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md transition-colors hover:bg-white/15">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-200 shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-white text-xs font-semibold">Real-Time Stock Velocity</div>
+                <div className="text-blue-200/70 text-[11px]">
+                  Instant reorder alerts, movement logs, and catalog sync
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md transition-colors hover:bg-white/15">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-200 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-white text-xs font-semibold">Multi-Tier Approval Workflows</div>
+                <div className="text-blue-200/70 text-[11px]">
+                  Role-based threshold routing with complete audit trail
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md transition-colors hover:bg-white/15">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-200 shrink-0">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-white text-xs font-semibold">Executive Analytics &amp; KPIs</div>
+                <div className="text-blue-200/70 text-[11px]">
+                  Visual sales trends, customer distribution, and margins
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="relative z-10 text-[11px] text-blue-200/60 flex items-center justify-between border-t border-white/10 pt-4">
+          <span>Enterprise Edition v2.4</span>
+          <span>SOC2 Type II &amp; ISO 27001 Certified</span>
         </div>
       </div>
 
-      {/* Soft low-contrast mint card as requested in user adjustment 5 */}
-      <div className="w-full max-w-md bg-forest-surface border border-forest-border p-6 sm:p-8 rounded-card shadow-flat flex flex-col gap-6">
-        <div>
-          <h2 className="font-serif text-xl font-medium text-forest">Welcome Back</h2>
-          <p className="text-xs text-forest-muted mt-1">
-            Sign in with your enterprise credentials to access the system.
-          </p>
+      {/* RIGHT SIDE: Authentication Form (Responsive) */}
+      <div className="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between min-h-screen p-6 sm:p-10 lg:p-12 xl:p-16 relative bg-bg overflow-y-auto">
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between w-full">
+          {/* Mobile Logo */}
+          <div className="flex lg:hidden items-center gap-2.5">
+            <SimsLogo size={34} />
+            <div>
+              <span className="font-bold text-text text-base leading-none font-serif block">
+                SIMS
+              </span>
+              <span className="text-[10px] text-muted block mt-0.5">Sales &amp; Inventory</span>
+            </div>
+          </div>
+          <div className="hidden lg:block" />
+
+          {/* Theme Toggle Button */}
+          <div className="shrink-0">
+            <ThemeToggle />
+          </div>
         </div>
 
-        {error && (
-          <div className="p-3 rounded-input bg-white border border-forest text-xs text-forest flex items-center gap-2">
-            <span>{error}</span>
+        {/* Central Login Card */}
+        <div className="w-full max-w-md mx-auto my-auto py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text font-serif">
+              Welcome back
+            </h1>
+            <p className="text-caption text-muted mt-1.5 text-sm">
+              Sign in with your enterprise credentials to access your workspace.
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormField label="Email Address" required>
-            <Input
-              type="email"
-              placeholder="user@sims.local"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              required
-            />
-          </FormField>
+          {error && (
+            <div className="p-3.5 mb-6 rounded-card bg-dangerSoft text-danger text-caption flex items-start gap-2.5 border border-danger/30 shadow-sm animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="text-xs leading-relaxed">{error}</div>
+            </div>
+          )}
 
-          <FormField label="Password" required>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              required
-            />
-          </FormField>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <FormField label="Email Address" required>
+              <div className="relative">
+                <Input
+                  type="email"
+                  placeholder="name@sims.local"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setSelectedRole(null);
+                  }}
+                  disabled={isLoading}
+                  required
+                  className="pl-9"
+                  autoFocus
+                />
+                <Mail className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </FormField>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            isLoading={isLoading}
-            className="w-full mt-2"
-          >
-            Sign In to SIMS
-          </Button>
-        </form>
+            <FormField label="Password" required>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setSelectedRole(null);
+                  }}
+                  disabled={isLoading}
+                  required
+                  className="pl-9 pr-10"
+                />
+                <Lock className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors p-1"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </FormField>
 
-        {/* Quick Demo Credentials */}
-        <div className="pt-4 border-t border-forest-border flex flex-col gap-2.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-forest-muted text-center">
-            One-Click Demo Roles
-          </span>
-
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin@sims.local', 'Admin@123456')}
-              className="flex flex-col items-center justify-center p-2 rounded-input bg-white hover:bg-forest-border/40 border border-forest-border text-[11px] text-forest transition-colors gap-1"
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              isLoading={isLoading}
+              className="w-full mt-2 font-medium"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-forest" />
-              <span className="font-medium">Admin</span>
-            </button>
+              Sign In to SIMS
+            </Button>
+          </form>
 
-            <button
-              type="button"
-              onClick={() => handleQuickFill('manager@sims.local', 'Manager@123456')}
-              className="flex flex-col items-center justify-center p-2 rounded-input bg-white hover:bg-forest-border/40 border border-forest-border text-[11px] text-forest transition-colors gap-1"
-            >
-              <Briefcase className="w-3.5 h-3.5 text-forest" />
-              <span className="font-medium">Manager</span>
-            </button>
+          {/* Quick One-Click Demo Access */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                One-Click Demo Roles
+              </span>
+              <span className="text-[11px] text-muted">Auto-fills credentials</span>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => handleQuickFill('sales@sims.local', 'Sales@123456')}
-              className="flex flex-col items-center justify-center p-2 rounded-input bg-white hover:bg-forest-border/40 border border-forest-border text-[11px] text-forest transition-colors gap-1"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-forest" />
-              <span className="font-medium">Sales Rep</span>
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin', 'admin@sims.local', 'Admin@123456')}
+                className={cn(
+                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
+                  selectedRole === 'admin'
+                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
+                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
+                )}
+              >
+                <ShieldCheck className="w-4 h-4 text-accent" />
+                <span>Admin</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('manager', 'manager@sims.local', 'Manager@123456')}
+                className={cn(
+                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
+                  selectedRole === 'manager'
+                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
+                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
+                )}
+              >
+                <Briefcase className="w-4 h-4 text-accent" />
+                <span>Manager</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('sales', 'sales@sims.local', 'Sales@123456')}
+                className={cn(
+                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
+                  selectedRole === 'sales'
+                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
+                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
+                )}
+              >
+                <UserCheck className="w-4 h-4 text-accent" />
+                <span>Sales Rep</span>
+              </button>
+            </div>
           </div>
+        </div>
+
+        {/* Bottom Footer Notice */}
+        <div className="w-full text-center text-xs text-muted pt-4 border-t border-border/40">
+          Protected by enterprise-grade RBAC &amp; JWT authentication.
         </div>
       </div>
     </div>

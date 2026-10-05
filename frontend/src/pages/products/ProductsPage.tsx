@@ -118,16 +118,16 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'sku',
       header: 'SKU',
-      className: 'font-mono text-[11px] font-medium text-forest',
+      className: 'font-mono text-[11px] text-body ',
     },
     {
       key: 'name',
       header: 'Name',
       render: (p) => (
         <div>
-          <span className="font-medium text-forest block">{p.name}</span>
+          <span className="text-body block">{p.name}</span>
           {p.description && (
-            <span className="text-[11px] text-forest-muted line-clamp-1">
+            <span className="text-caption line-clamp-1">
               {p.description}
             </span>
           )}
@@ -138,7 +138,7 @@ export const ProductsPage: React.FC = () => {
       key: 'category',
       header: 'Category',
       render: (p) => (
-        <span className="px-2 py-0.5 rounded-full bg-forest-surface text-forest-muted text-[11px] border border-forest-border/60">
+        <span className="px-2 py-0.5 rounded-full bg-surfaceAlt text-muted text-[11px] border border-border">
           {p.category || 'General'}
         </span>
       ),
@@ -146,7 +146,7 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'price',
       header: 'Unit Price',
-      className: 'tabular-nums font-medium text-forest-dark',
+      className: 'tabular-nums text-body ',
       render: (p) => formatCurrency(p.price),
     },
     {
@@ -157,15 +157,15 @@ export const ProductsPage: React.FC = () => {
         return (
           <div className="flex items-center gap-2">
             <span
-              className={`tabular-nums font-medium ${
-                isLow ? 'text-forest font-bold' : 'text-forest'
+              className={`tabular-nums  ${
+                isLow ? 'text-text ' : 'text-text'
               }`}
             >
               {p.stock_quantity}
             </span>
             {isLow && (
-              <span className="flex items-center gap-1 text-[10px] bg-forest-surface text-forest px-2 py-0.5 rounded-full border border-forest-border">
-                <AlertTriangle className="w-3 h-3 text-forest" /> Low (Reorder: {p.reorder_level})
+              <span className="flex items-center gap-1 text-[10px] bg-surfaceAlt text-text px-2 py-0.5 rounded-full border border-border">
+                <AlertTriangle className="w-3 h-3 text-text" /> Low (Reorder: {p.reorder_level})
               </span>
             )}
           </div>
@@ -184,21 +184,21 @@ export const ProductsPage: React.FC = () => {
                   setAdjustingProduct(p);
                   setAdjustData({ movement_type: 'IN', quantity: 1, reason: '' });
                 }}
-                className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
                 title="Adjust Stock"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => handleOpenEdit(p)}
-                className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
                 title="Edit Product"
               >
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setDeletingProduct(p)}
-                className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
                 title="Delete Product"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -215,6 +215,7 @@ export const ProductsPage: React.FC = () => {
       <PageHeader
         title="Products Catalog"
         subtitle="Manage product SKU records, catalog pricing, and inventory reorder levels."
+        hero="products"
         action={
           isManager && (
             <Button
@@ -248,10 +249,10 @@ export const ProductsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsLowStock(isLowStock ? undefined : true)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-body  border transition-colors ${
                 isLowStock
-                  ? 'bg-mint-primary text-forest-dark border-mint'
-                  : 'bg-white text-forest-muted border-forest-border hover:bg-forest-surface'
+                  ? 'bg-primary text-primaryText border-primary/40'
+                  : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
               }`}
             >
               Low Stock Only
@@ -308,7 +309,7 @@ export const ProductsPage: React.FC = () => {
           </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Selling Price ($)" required>
+            <FormField label="Selling Price (₹)" required>
               <Input
                 type="number"
                 step="0.01"
@@ -318,7 +319,7 @@ export const ProductsPage: React.FC = () => {
                 required
               />
             </FormField>
-            <FormField label="Cost Price ($)">
+            <FormField label="Cost Price (₹)">
               <Input
                 type="number"
                 step="0.01"
@@ -358,7 +359,7 @@ export const ProductsPage: React.FC = () => {
             </FormField>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-forest-border">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button
               type="button"
               variant="outline"

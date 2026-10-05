@@ -60,28 +60,28 @@ export const ApprovalsQueuePage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Order #',
-      className: 'font-mono text-[11px] font-medium text-forest',
+      className: 'font-mono text-[11px] text-body ',
     },
     {
       key: 'customer_name',
       header: 'Customer',
-      render: (o) => <span className="font-medium text-forest">{o.customer_name}</span>,
+      render: (o) => <span className="text-body">{o.customer_name}</span>,
     },
     {
       key: 'creator_name',
       header: 'Created By',
-      render: (o) => <span className="text-forest-muted text-xs">{o.creator_name}</span>,
+      render: (o) => <span className="text-muted text-caption">{o.creator_name}</span>,
     },
     {
       key: 'total_amount',
       header: 'Order Value',
-      className: 'tabular-nums font-serif text-sm font-medium text-forest-dark',
+      className: 'tabular-nums  text-body text-body ',
       render: (o) => formatCurrency(o.total_amount),
     },
     {
       key: 'created_at',
       header: 'Submitted',
-      className: 'text-forest-muted text-[11px]',
+      className: 'text-muted text-[11px]',
       render: (o) => formatDate(o.created_at),
     },
     {
@@ -123,6 +123,7 @@ export const ApprovalsQueuePage: React.FC = () => {
       <PageHeader
         title="Manager Approvals Queue"
         subtitle="Review orders exceeding monetary threshold. Approving atomically locks inventory rows, validates stock, and fulfills the order."
+        hero="approvals"
       />
 
       <DataTable
@@ -135,7 +136,8 @@ export const ApprovalsQueuePage: React.FC = () => {
         isLoading={isLoading}
         onPageChange={setPage}
         onRowClick={(o) => setSelectedOrderId(o.id)}
-        emptyTitle="Queue is clear"
+        emptyAnimation="all-caught-up"
+        emptyTitle="You're all caught up!"
         emptyDescription="There are currently no sales orders waiting for manager approval."
       />
 
@@ -148,17 +150,17 @@ export const ApprovalsQueuePage: React.FC = () => {
         width="lg"
       >
         {isLoadingDetail || !orderDetail ? (
-          <div className="h-48 bg-mint-200 animate-pulse rounded-card" />
+          <div className="h-48 bg-primarySoft animate-pulse rounded-card" />
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="p-4 rounded-card bg-forest-surface border border-forest-border flex items-center justify-between">
+            <div className="p-4 rounded-card bg-surfaceAlt border border-border flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-medium text-forest-muted block">Status</span>
+                <span className="text-[11px] text-muted block">Status</span>
                 <StatusBadge status={orderDetail.status} />
               </div>
               <div className="text-right">
-                <span className="text-[11px] font-medium text-forest-muted block">Total Value</span>
-                <span className="font-serif text-xl font-medium text-forest-dark tabular-nums">
+                <span className="text-[11px] text-muted block">Total Value</span>
+                <span className="text-title tabular-nums">
                   {formatCurrency(orderDetail.total_amount)}
                 </span>
               </div>
@@ -166,12 +168,12 @@ export const ApprovalsQueuePage: React.FC = () => {
 
             {/* Line Items */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-forest-muted mb-2">
+              <h3 className="text-caption uppercase tracking-wider text-muted mb-2">
                 Order Line Items
               </h3>
-              <div className="border border-forest-border rounded-input overflow-hidden">
-                <table className="w-full text-left text-xs text-forest">
-                  <thead className="bg-forest-surface border-b border-forest-border text-[11px] font-medium text-forest-muted">
+              <div className="border border-border rounded-input overflow-hidden">
+                <table className="w-full text-left text-caption text-text">
+                  <thead className="bg-surfaceAlt border-b border-border text-[11px] text-muted">
                     <tr>
                       <th className="px-3 py-2">Item</th>
                       <th className="px-3 py-2 text-right">Qty</th>
@@ -183,8 +185,8 @@ export const ApprovalsQueuePage: React.FC = () => {
                     {orderDetail.items.map((item) => (
                       <tr key={item.id}>
                         <td className="px-3 py-2.5">
-                          <span className="font-medium block">{item.product_name}</span>
-                          <span className="font-mono text-[10px] text-forest-muted">
+                          <span className="block">{item.product_name}</span>
+                          <span className="font-mono text-[10px] text-muted">
                             {item.product_sku}
                           </span>
                         </td>
@@ -192,7 +194,7 @@ export const ApprovalsQueuePage: React.FC = () => {
                         <td className="px-3 py-2.5 text-right tabular-nums">
                           {formatCurrency(item.unit_price)}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-medium tabular-nums text-forest-dark">
+                        <td className="px-3 py-2.5 text-right tabular-nums text-text">
                           {formatCurrency(item.total_price)}
                         </td>
                       </tr>
@@ -203,7 +205,7 @@ export const ApprovalsQueuePage: React.FC = () => {
             </div>
 
             {/* Manager Actions Bar */}
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-forest-border">
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border">
               <Button
                 variant="forest"
                 size="md"

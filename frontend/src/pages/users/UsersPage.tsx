@@ -42,29 +42,29 @@ export const UsersPage: React.FC = () => {
   };
 
   const roleStyles: Record<string, string> = {
-    ADMIN: 'bg-forest text-white border-forest',
-    MANAGER: 'bg-mint-primary text-forest-dark border-mint',
-    SALES: 'bg-forest-surface text-forest border-forest-border',
+    ADMIN: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30 font-semibold',
+    MANAGER: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold',
+    SALES: 'bg-surfaceAlt text-text border-border font-medium',
   };
 
   const columns: Column<User>[] = [
     {
       key: 'full_name',
       header: 'Name',
-      render: (u) => <span className="font-medium text-forest">{u.full_name}</span>,
+      render: (u) => <span className="text-body font-medium">{u.full_name}</span>,
     },
     {
       key: 'email',
       header: 'Email Address',
-      render: (u) => <span className="text-forest text-xs">{u.email}</span>,
+      render: (u) => <span className="text-muted text-caption">{u.email}</span>,
     },
     {
       key: 'role',
       header: 'Assigned Role',
       render: (u) => (
         <span
-          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-            roleStyles[u.role] || 'bg-forest-surface'
+          className={`px-2.5 py-0.5 rounded-full text-[11px] border ${
+            roleStyles[u.role] || 'bg-surfaceAlt text-text border-border'
           }`}
         >
           {u.role}
@@ -76,10 +76,10 @@ export const UsersPage: React.FC = () => {
       header: 'Status',
       render: (u) => (
         <span
-          className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
             u.is_active
-              ? 'bg-mint-primary text-forest-dark border-mint'
-              : 'bg-forest-surface text-forest-muted border-forest-border'
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+              : 'bg-surfaceAlt text-muted border-border'
           }`}
         >
           {u.is_active ? 'Active' : 'Inactive'}
@@ -93,7 +93,7 @@ export const UsersPage: React.FC = () => {
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => setDeletingUser(u)}
-            className="p-1.5 rounded-full hover:bg-forest-surface text-forest-muted hover:text-forest transition-colors"
+            className="p-1.5 rounded-full hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
             title="Deactivate User"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export const UsersPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full">
       <PageHeader
         title="User Administration"
         subtitle="Manage user accounts, credential security, and role-based permissions (Admin exclusive)."
@@ -142,7 +142,7 @@ export const UsersPage: React.FC = () => {
               setRoleFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-1.5 rounded-full text-xs font-medium border border-forest-border bg-white text-forest focus:outline-none"
+            className="px-3 py-1.5 rounded-full text-caption border border-border bg-surface text-text focus:outline-none focus:ring-1 focus:ring-chart1"
           >
             <option value="">All Roles</option>
             <option value="ADMIN">ADMIN</option>
@@ -204,7 +204,7 @@ export const UsersPage: React.FC = () => {
             </Select>
           </FormField>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-forest-border">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button
               type="button"
               variant="outline"
