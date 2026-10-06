@@ -8,8 +8,9 @@ import {
   Tooltip,
 } from 'recharts';
 import { TopSellingProduct } from '../../types/dashboard';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, cn } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
+import { Skeleton } from '../ui/Skeleton';
 import { useThemeColors } from '../../theme/ThemeProvider';
 
 interface TopProductsChartProps {
@@ -40,6 +41,19 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
       title="Top Selling Products"
       subtitle="Highest volume from completed orders"
       isLoading={isLoading}
+      loadingSkeleton={
+        <div className="flex-1 flex flex-col justify-around py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={`prod-bar-skel-${i}`} className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+              <Skeleton className={cn('h-2.5 rounded-full', ['w-[85%]', 'w-[70%]', 'w-[55%]', 'w-[40%]', 'w-[25%]'][i])} />
+            </div>
+          ))}
+        </div>
+      }
       isError={isError}
       onRetry={onRetry}
       isEmpty={isEmpty}

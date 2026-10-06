@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/auth';
 import { Skeleton } from '../ui/Skeleton';
+import { PageLoader } from '../ui/Loader';
 import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -22,14 +23,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const navigate = useNavigate();
 
   if (isLoading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-accent-bg gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary animate-pulse flex items-center justify-center text-text text-title">
-          S
-        </div>
-        <Skeleton className="h-4 w-48" />
-      </div>
-    );
+    return <PageLoader message="Verifying session..." />;
   }
 
   if (!isAuthenticated || !user) {

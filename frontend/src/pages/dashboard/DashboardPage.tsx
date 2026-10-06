@@ -22,7 +22,7 @@ import { MovementsTrendChart } from '../../components/dashboard/MovementsTrendCh
 import { RecentOrdersTable } from '../../components/dashboard/RecentOrdersTable';
 import { PendingApprovalsCard } from '../../components/dashboard/PendingApprovalsCard';
 import { Button } from '../../components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const DashboardPage: React.FC = () => {
@@ -99,6 +99,14 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Live syncing indicator */}
+          {isSummaryLoading && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surfaceAlt border border-border text-[11px] text-muted animate-fadeIn select-none">
+              <Loader2 className="w-3 h-3 animate-spin text-accent" />
+              <span className="hidden sm:inline">Syncing...</span>
+            </div>
+          )}
+
           {/* Date-range toggle pills: 7d / 30d / 90d */}
           <div className="flex items-center p-0.5 rounded-pill bg-surfaceAlt border border-border select-none">
             {([7, 30, 90] as const).map((r) => (

@@ -109,12 +109,14 @@ export function DataTable<T extends Record<string, any>>({
 
   // Realistic skeleton width variation
   const getSkeletonWidth = (rowIndex: number, colIndex: number) => {
-    const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-4/5', 'w-1/3', 'w-full'];
+    if (colIndex === columns.length - 1) return 'w-16 ml-auto';
+    if (colIndex === 0) return 'w-20';
+    const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-4/5', 'w-2/5', 'w-3/5'];
     const idx = (rowIndex * 3 + colIndex) % widths.length;
     return widths[idx];
   };
 
-  const skeletonRowCount = Math.min(pageSize || 15, 15);
+  const skeletonRowCount = Math.min(pageSize || 8, 8);
 
   return (
     <div className="w-full bg-surface rounded-card border border-border shadow-card overflow-hidden flex flex-col">

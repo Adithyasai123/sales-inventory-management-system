@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { OrderStatusCount } from '../../types/dashboard';
 import { DashboardCard } from './DashboardCard';
+import { Skeleton } from '../ui/Skeleton';
 import { useThemeColors } from '../../theme/ThemeProvider';
 
 interface StatusDonutChartProps {
@@ -51,6 +52,20 @@ export const StatusDonutChart: React.FC<StatusDonutChartProps> = ({
       title="Orders by Status"
       subtitle="Lifetime order status distribution"
       isLoading={isLoading}
+      loadingSkeleton={
+        <div className="flex-1 flex items-center justify-center gap-6 py-4">
+          <div className="relative flex items-center justify-center shrink-0">
+            <Skeleton className="w-28 h-28 rounded-full" />
+            <div className="absolute w-16 h-16 rounded-full bg-surface" />
+          </div>
+          <div className="flex flex-col gap-2.5 flex-1 max-w-[130px]">
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="h-3.5 w-3/4" />
+            <Skeleton className="h-3.5 w-5/6" />
+            <Skeleton className="h-3.5 w-2/3" />
+          </div>
+        </div>
+      }
       isError={isError}
       onRetry={onRetry}
       isEmpty={data.length === 0}

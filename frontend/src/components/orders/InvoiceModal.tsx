@@ -60,7 +60,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             {getStatusBadge()}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="primary" size="sm" onClick={handlePrint} leftIcon={<Printer className="w-3.5 h-3.5" />}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handlePrint}
+              disabled={order.status !== 'COMPLETED' && order.status !== 'APPROVED'}
+              leftIcon={<Printer className="w-3.5 h-3.5" />}
+            >
               Print Invoice
             </Button>
             <button
@@ -71,6 +77,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             </button>
           </div>
         </div>
+
+        {order.status !== 'COMPLETED' && order.status !== 'APPROVED' && (
+          <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-500 flex items-center gap-2 print:hidden">
+            <span>Notice: Official Tax Invoices are generated exclusively for fulfilled and completed orders. This order is currently {order.status}.</span>
+          </div>
+        )}
 
         {/* Printable Invoice Sheet */}
         <div id="printable-invoice" className="p-8 overflow-y-auto space-y-6 text-text bg-surface">

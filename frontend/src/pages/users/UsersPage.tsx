@@ -136,6 +136,12 @@ export const UsersPage: React.FC = () => {
   // Delete Dialog State
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
 
+  // Status Toggle Dialog State
+  const [confirmStatusUser, setConfirmStatusUser] = useState<{
+    user: User;
+    newStatus: boolean;
+  } | null>(null);
+
   // Available Managers for Super Admin assignment
   const managerOptions = useMemo<SelectOption[]>(() => {
     if (!data?.items) return [];
@@ -467,11 +473,13 @@ export const UsersPage: React.FC = () => {
               size="sm"
               checked={u.is_active}
               disabled={isSelfSuperAdmin || updateUserMutation.isPending}
-              onChange={async (newChecked) => {
-                await updateUserMutation.mutateAsync({
-                  id: u.id,
-                  payload: { is_active: newChecked },
-                });
+              onChange={() => {
+                if (!isSelfSuperAdmin && !updateUserMutation.isPending) {
+                  setConfirmStatusUser({
+                    user: u,
+                    newStatus: !u.is_active,
+                  });
+                }
               }}
             />
             <span
@@ -480,12 +488,12 @@ export const UsersPage: React.FC = () => {
                 isSelfSuperAdmin ? 'cursor-default' : 'cursor-pointer hover:underline',
                 u.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'
               )}
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.stopPropagation();
                 if (!isSelfSuperAdmin && !updateUserMutation.isPending) {
-                  await updateUserMutation.mutateAsync({
-                    id: u.id,
-                    payload: { is_active: !u.is_active },
+                  setConfirmStatusUser({
+                    user: u,
+                    newStatus: !u.is_active,
                   });
                 }
               }}
@@ -1147,6 +1155,30 @@ export const UsersPage: React.FC = () => {
         confirmLabel="Deactivate Account"
         variant="danger"
         isLoading={deleteUserMutation.isPending}
+      />
+
+      {/* STATUS TOGGLE CONFIRMATION DIALOG */}
+      <ConfirmDialog
+        isOpen={!!confirmStatusUser}
+        onClose={() => setConfirmStatusUser(null)}
+        onConfirm={async () => {
+          if (confirmStatusUser) {
+            await updateUserMutation.mutateAsync({
+              id: confirmStatusUser.user.id,
+              payload: { is_active: confirmStatusUser.newStatus },
+            });
+            setConfirmStatusUser(null);
+          }
+        }}
+        title={confirmStatusUser?.newStatus ? 'Activate User Account' : 'Deactivate User Account'}
+        description={
+          confirmStatusUser?.newStatus
+            ? `Are you sure you want to activate the account for "${confirmStatusUser?.user.full_name || confirmStatusUser?.user.email}"? They will regain access to SIMS.`
+            : `Are you sure you want to deactivate the account for "${confirmStatusUser?.user.full_name || confirmStatusUser?.user.email}"? Their active session will be invalidated and they will no longer be able to log in.`
+        }
+        confirmLabel={confirmStatusUser?.newStatus ? 'Activate Account' : 'Deactivate Account'}
+        variant={confirmStatusUser?.newStatus ? 'primary' : 'danger'}
+        isLoading={updateUserMutation.isPending}
       />
     </div>
   );

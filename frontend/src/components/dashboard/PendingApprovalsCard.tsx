@@ -4,6 +4,7 @@ import { SalesOrder } from '../../types/order';
 import { useSubmitApprovalAction } from '../../hooks/useApprovals';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
+import { Skeleton } from '../ui/Skeleton';
 import { ArrowUpRight, Check, X, Loader2 } from 'lucide-react';
 
 interface PendingApprovalsCardProps {
@@ -43,11 +44,11 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
     <DashboardCard
       title="Pending Approvals"
       subtitle="Orders requiring manager review"
-      isLoading={isLoading}
+      isLoading={false}
       isError={isError}
       onRetry={onRetry}
       fixedHeight={false}
-      isEmpty={pendingOrders.length === 0}
+      isEmpty={!isLoading && pendingOrders.length === 0}
       emptyMessage="No pending orders awaiting review"
       action={
         <Link
@@ -60,7 +61,27 @@ export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
       }
     >
       <div className="flex flex-col gap-2.5">
-        {pendingOrders.map((order) => {
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={`pending-skel-${i}`}
+              className="p-3 rounded-input bg-surfaceAlt/60 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+            >
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3.5 w-16" />
+                  <Skeleton className="h-3 w-14" />
+                </div>
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="h-3.5 w-20" />
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                <Skeleton className="w-16 h-7 rounded-btn" />
+                <Skeleton className="w-16 h-7 rounded-btn" />
+              </div>
+            </div>
+          ))
+        ) : pendingOrders.map((order) => {
           const isActing = actingOrderId === order.id;
 
           return (
