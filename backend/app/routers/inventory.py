@@ -1,6 +1,6 @@
 import math
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -114,7 +114,7 @@ def export_inventory_movements_csv(
             m.reason or "",
         ])
     output.seek(0)
-    filename = f"inventory_movements_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"inventory_movements_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",

@@ -33,8 +33,11 @@ class UserRepository(BaseRepository[User]):
         limit: int = 20,
         role: Optional[UserRole] = None,
         search: Optional[str] = None,
+        include_deleted: bool = False,
     ) -> Tuple[List[User], int]:
-        query = self.db.query(User).filter(User.is_deleted == False)
+        query = self.db.query(User)
+        if not include_deleted:
+            query = query.filter(User.is_deleted == False)
 
         if role:
             query = query.filter(User.role == role)

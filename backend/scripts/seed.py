@@ -26,18 +26,30 @@ def seed_database() -> None:
 
     try:
         from sqlalchemy import text
-        # Clear existing data to ensure a fresh state with only the newly seeded data
-        db.execute(text("PRAGMA foreign_keys = OFF;"))
-        db.execute(text("DELETE FROM order_approvals;"))
-        db.execute(text("DELETE FROM sales_order_items;"))
-        db.execute(text("DELETE FROM sales_orders;"))
-        db.execute(text("DELETE FROM inventory_movements;"))
-        db.execute(text("DELETE FROM products;"))
-        db.execute(text("DELETE FROM customers;"))
-        db.execute(text("DELETE FROM users;"))
-        db.execute(text("DELETE FROM system_settings;"))
-        db.execute(text("PRAGMA foreign_keys = ON;"))
+        # Clear existing data — disable FK checks in a dialect-safe way
+        dialect = db.bind.dialect.name
+        try:
+            if dialect == "sqlite":
+                db.execute(text("PRAGMA foreign_keys = OFF;"))
+            elif dialect == "mysql":
+                db.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+
+            db.execute(text("DELETE FROM order_approvals;"))
+            db.execute(text("DELETE FROM sales_order_items;"))
+            db.execute(text("DELETE FROM sales_orders;"))
+            db.execute(text("DELETE FROM inventory_movements;"))
+            db.execute(text("DELETE FROM products;"))
+            db.execute(text("DELETE FROM customers;"))
+            db.execute(text("DELETE FROM email_logs;"))
+            db.execute(text("DELETE FROM users;"))
+            db.execute(text("DELETE FROM system_settings;"))
+        finally:
+            if dialect == "sqlite":
+                db.execute(text("PRAGMA foreign_keys = ON;"))
+            elif dialect == "mysql":
+                db.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
         db.commit()
+
         # 1. System Settings
         threshold_setting = db.query(SystemSetting).filter_by(key="approval_threshold").first()
         if not threshold_setting:
@@ -47,7 +59,7 @@ def seed_database() -> None:
                 description="Orders with total_amount exceeding this threshold require manager approval.",
             )
             db.add(threshold_setting)
-            logger.info("Created system setting: approval_threshold = 1000.00")
+            logger.info("Created system setting: approval_threshold = 75000.00")
 
         company_setting = db.query(SystemSetting).filter_by(key="company_name").first()
         if not company_setting:
@@ -57,6 +69,24 @@ def seed_database() -> None:
                 description="Display company name for invoices and notifications.",
             )
             db.add(company_setting)
+
+        currency_code_setting = db.query(SystemSetting).filter_by(key="currency_code").first()
+        if not currency_code_setting:
+            currency_code_setting = SystemSetting(
+                key="currency_code",
+                value="INR",
+                description="ISO 4217 currency code used for formatting monetary values.",
+            )
+            db.add(currency_code_setting)
+
+        currency_locale_setting = db.query(SystemSetting).filter_by(key="currency_locale").first()
+        if not currency_locale_setting:
+            currency_locale_setting = SystemSetting(
+                key="currency_locale",
+                value="en-IN",
+                description="BCP 47 locale tag used for Intl.NumberFormat currency formatting.",
+            )
+            db.add(currency_locale_setting)
 
         db.flush()
 

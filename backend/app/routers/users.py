@@ -25,12 +25,19 @@ def list_users(
     page_size: int = Query(20, ge=1, le=100),
     role: Optional[UserRole] = None,
     search: Optional[str] = None,
+    include_deleted: bool = Query(False),
     db: Session = Depends(get_db),
 ):
     """List system users with pagination, role filtering, and search."""
     repo = UserRepository(db)
     skip = (page - 1) * page_size
-    items, total = repo.list_users(skip=skip, limit=page_size, role=role, search=search)
+    items, total = repo.list_users(
+        skip=skip,
+        limit=page_size,
+        role=role,
+        search=search,
+        include_deleted=include_deleted,
+    )
     total_pages = math.ceil(total / page_size) if total > 0 else 1
 
     return PaginatedResponse(
@@ -111,3 +118,17 @@ def delete_user(id: int, db: Session = Depends(get_db)):
     repo.delete(user, soft=True)
     db.commit()
     return MessageResponse(message=f"User '{user.email}' has been deactivated successfully.")
+
+
+@router.post("/{id}/restore", response_model=UserResponse)
+def restore_user(id: int, db: Session = Depends(get_db)):
+    """Restore a soft-deleted user."""
+    repo = UserRepository(db)
+    user = repo.get_by_id_including_deleted(id)
+    if not user:
+        raise EntityNotFoundException("User", id)
+
+    repo.restore(user)
+    db.commit()
+    db.refresh(user)
+    return user

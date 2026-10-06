@@ -31,8 +31,7 @@ class DashboardService:
         start_current = now - timedelta(days=range_days)
         start_prev = now - timedelta(days=range_days * 2)
 
-        # 1. Total Sales Revenue (COMPLETED orders)
-        # Check current period
+        # 1. Total Sales Revenue (COMPLETED orders in range)
         rev_curr_result = (
             self.db.query(func.coalesce(func.sum(SalesOrder.total_amount), 0))
             .filter(
@@ -42,16 +41,6 @@ class DashboardService:
             .scalar()
         )
         total_curr = Decimal(str(rev_curr_result or 0)).quantize(Decimal("0.01"))
-
-        # Fallback to lifetime if no orders exist in narrow window
-        if total_curr == Decimal("0.00"):
-            lifetime_rev = (
-                self.db.query(func.coalesce(func.sum(SalesOrder.total_amount), 0))
-                .filter(SalesOrder.status == OrderStatus.COMPLETED)
-                .scalar()
-            )
-            if lifetime_rev:
-                total_curr = Decimal(str(lifetime_rev)).quantize(Decimal("0.01"))
 
         # Previous period revenue for delta
         rev_prev_result = (
@@ -72,14 +61,12 @@ class DashboardService:
         else:
             rev_delta = 0.0
 
-        # 2. Total Orders Count
+        # 2. Total Orders Count in range
         orders_curr = (
             self.db.query(func.count(SalesOrder.id))
             .filter(SalesOrder.created_at >= start_current)
             .scalar() or 0
         )
-        if orders_curr == 0:
-            orders_curr = self.db.query(func.count(SalesOrder.id)).scalar() or 0
 
         orders_prev = (
             self.db.query(func.count(SalesOrder.id))
@@ -96,7 +83,7 @@ class DashboardService:
         else:
             orders_delta = 0.0
 
-        # 3. Average Order Value (revenue / completed order count)
+        # 3. Average Order Value (revenue / completed order count in range)
         completed_curr = (
             self.db.query(func.count(SalesOrder.id))
             .filter(
@@ -105,12 +92,6 @@ class DashboardService:
             )
             .scalar() or 0
         )
-        if completed_curr == 0:
-            completed_curr = (
-                self.db.query(func.count(SalesOrder.id))
-                .filter(SalesOrder.status == OrderStatus.COMPLETED)
-                .scalar() or 0
-            )
 
         completed_prev = (
             self.db.query(func.count(SalesOrder.id))
@@ -181,7 +162,10 @@ class DashboardService:
                 func.coalesce(func.sum(SalesOrder.total_amount), 0).label("revenue"),
                 func.count(SalesOrder.id).label("count"),
             )
-            .filter(SalesOrder.status == OrderStatus.COMPLETED)
+            .filter(
+                SalesOrder.status == OrderStatus.COMPLETED,
+                SalesOrder.created_at >= start_current,
+            )
             .group_by(func.date(SalesOrder.created_at))
             .all()
         )
@@ -191,6 +175,25 @@ class DashboardService:
                 "count": int(r.count),
             }
             for r in daily_sales_query
+        }
+
+        # Query previous period daily sales for trend comparison
+        daily_prev_query = (
+            self.db.query(
+                func.date(SalesOrder.created_at).label("order_date"),
+                func.coalesce(func.sum(SalesOrder.total_amount), 0).label("revenue"),
+            )
+            .filter(
+                SalesOrder.status == OrderStatus.COMPLETED,
+                SalesOrder.created_at >= start_prev,
+                SalesOrder.created_at < start_current,
+            )
+            .group_by(func.date(SalesOrder.created_at))
+            .all()
+        )
+        sales_prev_by_date = {
+            str(r.order_date): Decimal(str(r.revenue)).quantize(Decimal("0.01"))
+            for r in daily_prev_query
         }
 
         sales_trend: List[SalesTrendPoint] = []
@@ -205,13 +208,13 @@ class DashboardService:
             day_prev_str = day_prev_dt.strftime("%Y-%m-%d")
 
             d_curr = sales_by_date.get(day_curr_str, {"revenue": Decimal("0.00"), "count": 0})
-            d_prev = sales_by_date.get(day_prev_str, {"revenue": Decimal("0.00"), "count": 0})
+            prev_rev = sales_prev_by_date.get(day_prev_str, Decimal("0.00"))
 
             sales_trend.append(
                 SalesTrendPoint(
                     date=day_curr_str,
-                    revenue=float(d_curr["revenue"]),
-                    previous_revenue=float(d_prev["revenue"]),
+                    revenue=d_curr["revenue"],
+                    previous_revenue=prev_rev,
                     orders_count=d_curr["count"],
                 )
             )
@@ -221,25 +224,17 @@ class DashboardService:
             orders_spark.append(float(c_val))
             avg_spark.append(round(r_val / max(c_val, 1), 2) if c_val > 0 else 0.0)
 
-        # Baseline sparklines if empty
-        if all(v == 0 for v in rev_spark) and float(total_curr) > 0:
-            rev_spark[-1] = float(total_curr)
-        if all(v == 0 for v in orders_spark) and orders_curr > 0:
-            orders_spark[-1] = float(orders_curr)
-        if all(v == 0 for v in avg_spark) and float(avg_curr) > 0:
-            avg_spark[-1] = float(avg_curr)
-
         kpis = DashboardKPISummary(
-            total_sales_revenue=float(total_curr),
-            revenue_prev=float(total_prev),
+            total_sales_revenue=total_curr,
+            revenue_prev=total_prev,
             revenue_delta=rev_delta,
             revenue_sparkline=rev_spark,
             total_orders_count=orders_curr,
             orders_prev=orders_prev,
             orders_delta=orders_delta,
             orders_sparkline=orders_spark,
-            avg_order_value=float(avg_curr),
-            avg_order_value_prev=float(avg_prev),
+            avg_order_value=avg_curr,
+            avg_order_value_prev=avg_prev,
             avg_order_value_delta=avg_delta,
             avg_order_value_sparkline=avg_spark,
             pending_approvals_count=pending_approvals_count,
@@ -250,13 +245,13 @@ class DashboardService:
             low_stock_prev=low_stock_items_count,
             low_stock_delta=0.0,
             low_stock_sparkline=[float(low_stock_items_count)] * len(rev_spark),
-            inventory_value=float(inventory_value),
-            inventory_value_prev=float(inventory_value),
+            inventory_value=inventory_value,
+            inventory_value_prev=inventory_value,
             inventory_value_delta=0.0,
             inventory_value_sparkline=[float(inventory_value)] * len(rev_spark),
         )
 
-        # Status distribution
+        # Status distribution (all orders)
         status_results = (
             self.db.query(SalesOrder.status, func.count(SalesOrder.id))
             .group_by(SalesOrder.status)
@@ -267,7 +262,7 @@ class DashboardService:
             for status, count in status_results
         ]
 
-        # Top selling products
+        # Top selling products in range
         top_products_query = (
             self.db.query(
                 Product.id,
@@ -278,7 +273,10 @@ class DashboardService:
             )
             .join(SalesOrderItem, SalesOrderItem.product_id == Product.id)
             .join(SalesOrder, SalesOrderItem.order_id == SalesOrder.id)
-            .filter(SalesOrder.status == OrderStatus.COMPLETED)
+            .filter(
+                SalesOrder.status == OrderStatus.COMPLETED,
+                SalesOrder.created_at >= start_current,
+            )
             .group_by(Product.id, Product.sku, Product.name)
             .order_by(desc("units_sold"))
             .limit(5)
@@ -290,7 +288,7 @@ class DashboardService:
                 sku=row.sku,
                 name=row.name,
                 units_sold=int(row.units_sold or 0),
-                total_revenue=float(row.revenue or 0.0),
+                total_revenue=Decimal(str(row.revenue or 0)).quantize(Decimal("0.01")),
             )
             for row in top_products_query
         ]
@@ -323,29 +321,12 @@ class DashboardService:
             .all()
         )
 
-        # Fallback to all completed orders if range filter returns empty
-        if not query:
-            query = (
-                self.db.query(
-                    Customer.id,
-                    Customer.name,
-                    func.count(SalesOrder.id).label("orders_count"),
-                    func.coalesce(func.sum(SalesOrder.total_amount), 0).label("total_revenue"),
-                )
-                .join(SalesOrder, SalesOrder.customer_id == Customer.id)
-                .filter(SalesOrder.status == OrderStatus.COMPLETED)
-                .group_by(Customer.id, Customer.name)
-                .order_by(desc("total_revenue"))
-                .limit(limit)
-                .all()
-            )
-
         return [
             TopCustomer(
                 customer_id=row.id,
                 customer_name=row.name,
                 orders_count=int(row.orders_count),
-                total_revenue=float(row.total_revenue or 0.0),
+                total_revenue=Decimal(str(row.total_revenue or 0)).quantize(Decimal("0.01")),
             )
             for row in query
         ]
@@ -367,7 +348,7 @@ class DashboardService:
                 stock_quantity=p.stock_quantity,
                 reorder_level=p.reorder_level,
                 is_low_stock=(p.stock_quantity <= p.reorder_level),
-                unit_price=float(p.price or 0.0),
+                unit_price=Decimal(str(p.price or 0)).quantize(Decimal("0.01")),
             )
             for p in products
         ]
@@ -380,31 +361,39 @@ class DashboardService:
             .filter(SalesOrder.created_at >= start_date)
             .scalar() or 0
         )
-        if created_count == 0:
-            created_count = self.db.query(func.count(SalesOrder.id)).scalar() or 0
 
         pending_count = (
             self.db.query(func.count(SalesOrder.id))
-            .filter(SalesOrder.status == OrderStatus.PENDING_APPROVAL)
+            .filter(
+                SalesOrder.status == OrderStatus.PENDING_APPROVAL,
+                SalesOrder.created_at >= start_date,
+            )
             .scalar() or 0
         )
 
         approved_count = (
             self.db.query(func.count(SalesOrder.id))
-            .filter(SalesOrder.status.in_([OrderStatus.APPROVED, OrderStatus.COMPLETED]))
+            .filter(
+                SalesOrder.status.in_([OrderStatus.APPROVED, OrderStatus.COMPLETED]),
+                SalesOrder.created_at >= start_date,
+            )
             .scalar() or 0
         )
 
         rejected_count = (
             self.db.query(func.count(SalesOrder.id))
-            .filter(SalesOrder.status == OrderStatus.REJECTED)
+            .filter(
+                SalesOrder.status == OrderStatus.REJECTED,
+                SalesOrder.created_at >= start_date,
+            )
             .scalar() or 0
         )
 
-        # Average decision time in hours
+        # Average decision time in hours (within window)
         approvals = (
             self.db.query(OrderApproval, SalesOrder.created_at)
             .join(SalesOrder, OrderApproval.order_id == SalesOrder.id)
+            .filter(SalesOrder.created_at >= start_date)
             .all()
         )
 
@@ -422,8 +411,10 @@ class DashboardService:
                 total_hours += diff / 3600.0
                 count += 1
 
-        avg_hours = round(total_hours / count, 1) if count > 0 else 1.8
-        if avg_hours < 1:
+        avg_hours = round(total_hours / count, 1) if count > 0 else 0.0
+        if avg_hours == 0.0:
+            formatted = "0h"
+        elif avg_hours < 1:
             formatted = f"{max(1, int(avg_hours * 60))}m"
         else:
             formatted = f"{avg_hours}h"

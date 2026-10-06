@@ -40,6 +40,18 @@ class BaseRepository(Generic[ModelType]):
         self.db.flush()
         return obj
 
+    def get_by_id_including_deleted(self, id: Any) -> Optional[ModelType]:
+        return self.db.query(self.model).filter(self.model.id == id).first()
+
+    def restore(self, obj: ModelType) -> ModelType:
+        if hasattr(obj, "restore"):
+            obj.restore()
+            self.db.flush()
+        elif hasattr(obj, "is_deleted"):
+            obj.is_deleted = False
+            self.db.flush()
+        return obj
+
     def delete(self, obj: ModelType, soft: bool = True) -> None:
         if soft and hasattr(obj, "soft_delete"):
             obj.soft_delete()
@@ -47,3 +59,4 @@ class BaseRepository(Generic[ModelType]):
         else:
             self.db.delete(obj)
             self.db.flush()
+

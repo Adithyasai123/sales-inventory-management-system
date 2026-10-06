@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, desc, asc, func
 from app.models.order import SalesOrder, SalesOrderItem, OrderStatus
 from app.models.customer import Customer
+from app.models.sequence import Sequence
 from app.repositories.base import BaseRepository
 
 
@@ -108,17 +109,45 @@ class OrderRepository(BaseRepository[SalesOrder]):
         return {status.value: count for status, count in results}
 
     def generate_next_order_number(self) -> str:
+        """Atomically generate the next sequential order number using SELECT ... FOR UPDATE on sequences table.
+        Format: ORD-YYYYMMDD-0001
+        """
         today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         prefix = f"ORD-{today_str}-"
-        last_order = (
-            self.db.query(SalesOrder.order_number)
-            .filter(SalesOrder.order_number.like(f"{prefix}%"))
-            .order_by(SalesOrder.order_number.desc())
-            .first()
-        )
-        if last_order and last_order[0]:
-            last_seq = int(last_order[0].split("-")[-1])
-            next_seq = last_seq + 1
-        else:
-            next_seq = 1
+        seq_name = f"order_{today_str}"
+
+        try:
+            seq_row = (
+                self.db.query(Sequence)
+                .filter(Sequence.name == seq_name)
+                .with_for_update()
+                .first()
+            )
+            if seq_row is None:
+                seq_row = Sequence(name=seq_name, last_value=0)
+                self.db.add(seq_row)
+                self.db.flush()
+                seq_row = (
+                    self.db.query(Sequence)
+                    .filter(Sequence.name == seq_name)
+                    .with_for_update()
+                    .first()
+                )
+
+            seq_row.last_value += 1
+            next_seq = seq_row.last_value
+        except Exception:
+            # Fallback for environments where sequences table is unavailable
+            last_order = (
+                self.db.query(SalesOrder.order_number)
+                .filter(SalesOrder.order_number.like(f"{prefix}%"))
+                .order_by(SalesOrder.order_number.desc())
+                .first()
+            )
+            if last_order and last_order[0]:
+                last_seq = int(last_order[0].split("-")[-1])
+                next_seq = last_seq + 1
+            else:
+                next_seq = 1
+
         return f"{prefix}{next_seq:04d}"

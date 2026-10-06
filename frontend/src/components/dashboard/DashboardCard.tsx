@@ -16,6 +16,7 @@ interface DashboardCardProps {
   isEmpty?: boolean;
   emptyIcon?: React.ReactNode;
   emptyMessage?: string;
+  emptyHint?: string;
   fixedHeight?: boolean;
   showTopAccent?: boolean;
   children: React.ReactNode;
@@ -32,7 +33,8 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   onRetry,
   isEmpty = false,
   emptyIcon,
-  emptyMessage = 'No sales in this range',
+  emptyMessage = 'No data in this range',
+  emptyHint,
   fixedHeight = true,
   showTopAccent = false,
   children,
@@ -109,8 +111,11 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
           </div>
         ) : isEmpty ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-3">
-            {emptyIcon || <Illustration name="state-empty-chart" size={96} wrapTile={false} alt="Empty chart" />}
-            <p className="text-body-lg text-muted max-w-[260px] mt-1">{emptyMessage}</p>
+            {emptyIcon || <Illustration name="state-empty-chart" size={88} wrapTile={false} alt="Empty chart" />}
+            <p className="text-subtitle text-text max-w-[280px] mt-1">{emptyMessage}</p>
+            {emptyHint && (
+              <p className="text-caption text-muted max-w-[280px] mt-0.5">{emptyHint}</p>
+            )}
           </div>
         ) : (
           children

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import BackgroundTasks
 
 from app.models.order import SalesOrder, OrderStatus
+from app.models.product import Product
 from app.models.approval import ApprovalDecision, OrderApproval
 from app.models.inventory import MovementType
 from app.models.user import User, UserRole
@@ -90,11 +91,34 @@ class ApprovalService:
                         available=available,
                     )
 
-            # Deduct stock and write to inventory_movements ledger
+            # Deduct stock atomically and write to inventory_movements ledger
             for item in order.items:
                 product = locked_map[item.product_id]
-                product.stock_quantity -= item.quantity
-                
+                affected = (
+                    self.db.query(Product)
+                    .filter(
+                        Product.id == product.id,
+                        Product.stock_quantity >= item.quantity,
+                        Product.is_deleted == False,
+                    )
+                    .update(
+                        {Product.stock_quantity: Product.stock_quantity - item.quantity},
+                        synchronize_session="fetch",
+                    )
+                )
+                if affected == 0:
+                    self.db.refresh(product)
+                    logger.warning(
+                        f"Insufficient stock on approval for order {order.order_number}, product {item.product_id}. "
+                        f"Requested: {item.quantity}, Available: {product.stock_quantity}"
+                    )
+                    raise InsufficientStockException(
+                        product_id=item.product_id,
+                        sku=product.sku,
+                        requested=item.quantity,
+                        available=product.stock_quantity,
+                    )
+
                 self.inventory_repo.record_movement(
                     product_id=product.id,
                     movement_type=MovementType.OUT,
@@ -118,14 +142,11 @@ class ApprovalService:
             comment=action.comment,
         )
 
-        self.db.commit()
-        self.db.refresh(order)
-
-        # 8. Notify order creator via Email
+        # 8. Create EmailLog row INSIDE transaction (before commit) so it commits atomically
+        pending_email: Optional[tuple] = None
         if order.creator:
-            EmailService.send_order_decision_to_creator(
+            pending_email = EmailService.create_decision_log(
                 db=self.db,
-                background_tasks=background_tasks,
                 creator_email=order.creator.email,
                 creator_name=order.creator.full_name,
                 order_number=order.order_number,
@@ -133,6 +154,19 @@ class ApprovalService:
                 comment=action.comment,
                 total_amount=order.total_amount,
             )
+
+        self.db.commit()
+        self.db.refresh(order)
+
+        # 9. Schedule SMTP background task AFTER commit so log_id is committed and visible
+        if pending_email:
+            log_id, to_email, subject, html_body = pending_email
+            if background_tasks:
+                background_tasks.add_task(
+                    EmailService._send_smtp_email, to_email, subject, html_body, log_id
+                )
+            else:
+                EmailService._send_smtp_email(to_email, subject, html_body, log_id)
 
         logger.info(f"Order {order.order_number} {action.decision.value} by {approver.email}")
         return self.order_repo.get_with_details(order.id)

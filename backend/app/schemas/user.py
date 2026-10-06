@@ -46,6 +46,7 @@ class UserResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    is_deleted: bool = False
     created_at: datetime
     updated_at: datetime
 

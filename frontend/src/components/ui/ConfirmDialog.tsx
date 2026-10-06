@@ -67,7 +67,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <div className="w-8 h-8 rounded-full bg-surfaceAlt flex items-center justify-center text-text shrink-0">
               <AlertCircle className="w-4 h-4 text-accent" />
             </div>
-            <h3 className="text-title font-semibold">{title}</h3>
+            <h3 className="text-title">{title}</h3>
           </div>
           <button
             onClick={onClose}

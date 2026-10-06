@@ -98,7 +98,7 @@ export const Illustration: React.FC<IllustrationProps> = ({
             <path d="M 75 25 L 105 42 L 135 25" stroke="var(--color-accent)" strokeWidth="2" fill="none" />
             {/* Price Tag Badge */}
             <circle cx="120" cy="80" r="16" fill="var(--color-surfaceAlt)" stroke="var(--color-accent)" strokeWidth="2" />
-            <text x="111" y="85" fill="var(--color-accent)" fontSize="14" fontWeight="bold">$</text>
+            <text x="111" y="85" fill="var(--color-accent)" fontSize="14" fontWeight="bold">₹</text>
           </svg>
         );
 

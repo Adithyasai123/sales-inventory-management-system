@@ -67,7 +67,7 @@ export const DashboardPage: React.FC = () => {
     isLoading: isMovementsLoading,
     isError: isMovementsError,
     refetch: refetchMovements,
-  } = useMovementsTrend(range === 7 ? 7 : range === 90 ? 30 : 14);
+  } = useMovementsTrend(range);
 
   // Recent Orders Query (Compact 6 rows)
   const {

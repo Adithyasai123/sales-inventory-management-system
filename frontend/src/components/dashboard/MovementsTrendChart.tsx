@@ -26,6 +26,9 @@ export const MovementsTrendChart: React.FC<MovementsTrendChartProps> = ({
 }) => {
   const colors = useThemeColors();
 
+  const isEmpty =
+    data.length === 0 || data.every((m) => m.in_qty === 0 && m.out_qty === 0);
+
   return (
     <DashboardCard
       title="Stock Movements"
@@ -33,8 +36,9 @@ export const MovementsTrendChart: React.FC<MovementsTrendChartProps> = ({
       isLoading={isLoading}
       isError={isError}
       onRetry={onRetry}
-      isEmpty={data.length === 0}
-      emptyMessage="No data for this range"
+      isEmpty={isEmpty}
+      emptyMessage="No stock movements in this range"
+      emptyHint="Inventory restocks, orders, and audits will appear here."
       action={
         <div className="flex items-center gap-3 text-caption">
           <span className="flex items-center gap-1.5">

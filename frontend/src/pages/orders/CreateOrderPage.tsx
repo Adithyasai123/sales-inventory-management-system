@@ -259,7 +259,7 @@ export const CreateOrderPage: React.FC = () => {
                       <span className="text-body text-text font-semibold tabular-nums">
                         {selectedProduct
                           ? formatCurrency(Number(selectedProduct.price) * line.quantity)
-                          : '₹0.00'}
+                          : formatCurrency(0)}
                       </span>
                     </div>
 

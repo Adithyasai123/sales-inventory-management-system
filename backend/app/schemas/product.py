@@ -38,6 +38,7 @@ class ProductResponse(BaseModel):
     stock_quantity: int
     reorder_level: int
     is_active: bool
+    is_deleted: bool = False
     is_low_stock: bool = False
     created_at: datetime
     updated_at: datetime

@@ -50,6 +50,8 @@ class Settings(BaseSettings):
 
     # Default Business Rules
     DEFAULT_APPROVAL_THRESHOLD: Decimal = Decimal("1000.00")
+    CURRENCY_CODE: str = "INR"
+    CURRENCY_LOCALE: str = "en-IN"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,13 +1,17 @@
 import math
+import io
+import csv
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.exceptions import EntityNotFoundException, DuplicateResourceException
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_role
 from app.models.customer import Customer
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.customer_repo import CustomerRepository
 from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse
 from app.schemas.common import PaginatedResponse, MessageResponse
@@ -21,8 +25,9 @@ def list_customers(
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("name", regex="^(name|email|company|created_at)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    include_deleted: bool = Query(False),
+    sort_by: str = Query("name", pattern="^(name|email|company|created_at)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -34,6 +39,7 @@ def list_customers(
         limit=page_size,
         search=search,
         is_active=is_active,
+        include_deleted=include_deleted,
         sort_by=sort_by,
         sort_order=sort_order,
     )
@@ -73,6 +79,63 @@ def create_customer(
     db.commit()
     db.refresh(customer)
     return customer
+
+
+@router.get("/export/csv")
+def export_customers_csv(
+    search: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    include_deleted: bool = Query(False),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export customer list as CSV."""
+    repo = CustomerRepository(db)
+    items, _ = repo.list_customers(
+        skip=0,
+        limit=10000,
+        search=search,
+        is_active=is_active,
+        include_deleted=include_deleted,
+        sort_by="name",
+        sort_order="asc",
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID",
+        "Name",
+        "Email",
+        "Phone",
+        "Company",
+        "Address",
+        "City",
+        "Country",
+        "Is Active",
+        "Is Deleted",
+        "Created At",
+    ])
+    for c in items:
+        writer.writerow([
+            c.id,
+            c.name,
+            c.email,
+            c.phone or "",
+            c.company or "",
+            c.address or "",
+            c.city or "",
+            c.country or "",
+            "Yes" if c.is_active else "No",
+            "Yes" if getattr(c, "is_deleted", False) else "No",
+            c.created_at.strftime("%Y-%m-%d %H:%M:%S") if c.created_at else "",
+        ])
+    output.seek(0)
+    filename = f"customers_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.get("/{id}", response_model=CustomerResponse)
@@ -142,3 +205,21 @@ def delete_customer(
     repo.delete(customer, soft=True)
     db.commit()
     return MessageResponse(message=f"Customer '{customer.name}' has been soft-deleted.")
+
+
+@router.post("/{id}/restore", response_model=CustomerResponse)
+def restore_customer(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+):
+    """Restore a soft-deleted customer."""
+    repo = CustomerRepository(db)
+    customer = repo.get_by_id_including_deleted(id)
+    if not customer:
+        raise EntityNotFoundException("Customer", id)
+
+    repo.restore(customer)
+    db.commit()
+    db.refresh(customer)
+    return customer

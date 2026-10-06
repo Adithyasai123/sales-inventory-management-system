@@ -39,4 +39,12 @@ class SettingRepository(BaseRepository[SystemSetting]):
         return setting
 
     def list_all(self) -> List[SystemSetting]:
+        # Ensure default currency and threshold settings exist
+        if not self.get_by_key("currency_code"):
+            self.set_value("currency_code", settings.CURRENCY_CODE, "ISO 4217 currency code used for formatting monetary values.")
+        if not self.get_by_key("currency_locale"):
+            self.set_value("currency_locale", settings.CURRENCY_LOCALE, "BCP 47 locale tag used for Intl.NumberFormat currency formatting.")
+        if not self.get_by_key("approval_threshold"):
+            self.set_value("approval_threshold", str(settings.DEFAULT_APPROVAL_THRESHOLD), "Orders with total_amount exceeding this threshold require manager approval.")
+        self.db.commit()
         return self.db.query(SystemSetting).order_by(SystemSetting.key.asc()).all()

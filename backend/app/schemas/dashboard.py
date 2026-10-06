@@ -1,11 +1,12 @@
+from decimal import Decimal
 from typing import List
 from pydantic import BaseModel
 
 
 class DashboardKPISummary(BaseModel):
     # 1. Total Sales Revenue
-    total_sales_revenue: float
-    revenue_prev: float = 0.0
+    total_sales_revenue: Decimal
+    revenue_prev: Decimal = Decimal("0.00")
     revenue_delta: float = 0.0
     revenue_sparkline: List[float] = []
 
@@ -16,8 +17,8 @@ class DashboardKPISummary(BaseModel):
     orders_sparkline: List[float] = []
 
     # 3. Average Order Value
-    avg_order_value: float = 0.0
-    avg_order_value_prev: float = 0.0
+    avg_order_value: Decimal = Decimal("0.00")
+    avg_order_value_prev: Decimal = Decimal("0.00")
     avg_order_value_delta: float = 0.0
     avg_order_value_sparkline: List[float] = []
 
@@ -34,16 +35,16 @@ class DashboardKPISummary(BaseModel):
     low_stock_sparkline: List[float] = []
 
     # 6. Total Inventory Value
-    inventory_value: float = 0.0
-    inventory_value_prev: float = 0.0
+    inventory_value: Decimal = Decimal("0.00")
+    inventory_value_prev: Decimal = Decimal("0.00")
     inventory_value_delta: float = 0.0
     inventory_value_sparkline: List[float] = []
 
 
 class SalesTrendPoint(BaseModel):
     date: str
-    revenue: float
-    previous_revenue: float = 0.0
+    revenue: Decimal
+    previous_revenue: Decimal = Decimal("0.00")
     orders_count: int
 
 
@@ -57,14 +58,14 @@ class TopSellingProduct(BaseModel):
     sku: str
     name: str
     units_sold: int
-    total_revenue: float
+    total_revenue: Decimal
 
 
 class TopCustomer(BaseModel):
     customer_id: int
     customer_name: str
     orders_count: int
-    total_revenue: float
+    total_revenue: Decimal
 
 
 class InventoryHealthItem(BaseModel):
@@ -74,7 +75,7 @@ class InventoryHealthItem(BaseModel):
     stock_quantity: int
     reorder_level: int
     is_low_stock: bool
-    unit_price: float
+    unit_price: Decimal
 
 
 class ApprovalStatsResponse(BaseModel):

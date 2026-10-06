@@ -32,6 +32,9 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
     total_revenue: Number(item.total_revenue || 0),
   }));
 
+  const isEmpty =
+    chartData.length === 0 || chartData.every((item) => item.units_sold === 0);
+
   return (
     <DashboardCard
       title="Top Selling Products"
@@ -39,8 +42,9 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
       isLoading={isLoading}
       isError={isError}
       onRetry={onRetry}
-      isEmpty={chartData.length === 0}
-      emptyMessage="No data for this range"
+      isEmpty={isEmpty}
+      emptyMessage="No product sales in this range"
+      emptyHint="Units sold from completed orders will appear here."
     >
       <div className="w-full h-[200px] shrink-0">
         <ResponsiveContainer width="100%" height={200}>
@@ -73,7 +77,7 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({
                   return (
                     <div className="bg-surface border border-border p-2 rounded-input shadow-card text-caption">
                       <p className="text-subtitle">{item.name}</p>
-                      <p className="text-[11px] font-mono text-muted">SKU: {item.sku}</p>
+                      <p className="text-caption font-mono text-muted">SKU: {item.sku}</p>
                       <p className="text-text mt-1">Units Sold: <span className="">{item.units_sold}</span></p>
                       <p className="text-text">Revenue: {formatCurrency(item.total_revenue)}</p>
                     </div>

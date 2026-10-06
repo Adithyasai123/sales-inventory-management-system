@@ -235,17 +235,17 @@ export function DataTable<T extends Record<string, any>>({
       {onPageChange && (
         <div className="px-4 py-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-caption bg-surfaceAlt/40 select-none">
           {/* Records count & limit indicator */}
-          <div className="flex items-center gap-2 text-muted text-xs">
+          <div className="flex items-center gap-2 text-muted text-caption">
             <span>
               Showing{' '}
-              <strong className="text-text font-semibold tabular-nums">
+              <strong className="text-text tabular-nums">
                 {total === 0 ? 0 : (page - 1) * pageSize + 1}
               </strong>{' '}
               to{' '}
-              <strong className="text-text font-semibold tabular-nums">
+              <strong className="text-text tabular-nums">
                 {Math.min(page * pageSize, total)}
               </strong>{' '}
-              of <strong className="text-text font-semibold tabular-nums">{total}</strong> records
+              of <strong className="text-text tabular-nums">{total}</strong> records
             </span>
             <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface border border-border text-[10px] font-mono text-muted">
               {pageSize} / page
@@ -298,7 +298,7 @@ export function DataTable<T extends Record<string, any>>({
                       onClick={() => onPageChange(p)}
                       disabled={isLoading}
                       className={cn(
-                        'min-w-[28px] h-7 px-2 text-xs font-semibold rounded-input border transition-all tabular-nums flex items-center justify-center',
+                        'min-w-[28px] h-7 px-2 text-caption rounded-input border transition-all tabular-nums flex items-center justify-center',
                         isActive
                           ? 'bg-accent text-accentText border-accent shadow-xs'
                           : 'bg-surface hover:bg-surfaceAlt text-text border-border'

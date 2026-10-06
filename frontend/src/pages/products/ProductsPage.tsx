@@ -309,7 +309,7 @@ export const ProductsPage: React.FC = () => {
           </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Selling Price (₹)" required>
+            <FormField label="Selling Price" required>
               <Input
                 type="number"
                 step="0.01"
@@ -319,7 +319,7 @@ export const ProductsPage: React.FC = () => {
                 required
               />
             </FormField>
-            <FormField label="Cost Price (₹)">
+            <FormField label="Cost Price">
               <Input
                 type="number"
                 step="0.01"

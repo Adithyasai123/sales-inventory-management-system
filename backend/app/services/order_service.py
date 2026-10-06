@@ -1,6 +1,8 @@
 from decimal import Decimal
+import time
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import BackgroundTasks
 
 from app.models.order import SalesOrder, SalesOrderItem, OrderStatus
@@ -34,6 +36,27 @@ class OrderService:
         self.setting_repo = SettingRepository(db)
 
     def create_order(
+        self,
+        payload: OrderCreate,
+        creator: User,
+        background_tasks: Optional[BackgroundTasks] = None,
+    ) -> SalesOrder:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return self._create_order_attempt(payload, creator, background_tasks)
+            except IntegrityError as exc:
+                self.db.rollback()
+                err_msg = str(exc).lower()
+                if ("order_number" in err_msg or "unique" in err_msg) and attempt < max_retries - 1:
+                    logger.warning(
+                        f"Order number collision on attempt {attempt + 1}, retrying with a fresh order number..."
+                    )
+                    time.sleep(0.05 * (attempt + 1))
+                    continue
+                raise
+
+    def _create_order_attempt(
         self,
         payload: OrderCreate,
         creator: User,
@@ -133,14 +156,26 @@ class OrderService:
 
             for item_in in payload.items:
                 prod = locked_map[item_in.product_id]
-                if prod.stock_quantity < item_in.quantity:
+                affected = (
+                    self.db.query(Product)
+                    .filter(
+                        Product.id == prod.id,
+                        Product.stock_quantity >= item_in.quantity,
+                        Product.is_deleted == False,
+                    )
+                    .update(
+                        {Product.stock_quantity: Product.stock_quantity - item_in.quantity},
+                        synchronize_session="fetch",
+                    )
+                )
+                if affected == 0:
+                    self.db.refresh(prod)
                     raise InsufficientStockException(
                         product_id=prod.id,
                         sku=prod.sku,
                         requested=item_in.quantity,
                         available=prod.stock_quantity,
                     )
-                prod.stock_quantity -= item_in.quantity
                 self.inventory_repo.record_movement(
                     product_id=prod.id,
                     movement_type=MovementType.OUT,
@@ -150,19 +185,28 @@ class OrderService:
                     reason=f"Auto-fulfilled order {order.order_number}",
                 )
 
-        self.db.commit()
-        self.db.refresh(order)
-
-        # 8. Trigger Email to all managers if requires approval
+        # 8. Create EmailLog rows INSIDE transaction (before commit) so they commit atomically
+        pending_emails = []
         if requires_approval:
-            EmailService.send_approval_request_to_managers(
+            pending_emails = EmailService.create_approval_request_logs(
                 db=self.db,
-                background_tasks=background_tasks,
                 order_number=order.order_number,
                 total_amount=order.total_amount,
                 creator_name=creator.full_name,
                 customer_name=customer.name,
             )
+
+        self.db.commit()
+        self.db.refresh(order)
+
+        # 9. Schedule SMTP background tasks AFTER commit so log_ids are committed and visible
+        for log_id, to_email, subject, html_body in pending_emails:
+            if background_tasks:
+                background_tasks.add_task(
+                    EmailService._send_smtp_email, to_email, subject, html_body, log_id
+                )
+            else:
+                EmailService._send_smtp_email(to_email, subject, html_body, log_id)
 
         logger.info(f"Order created: {order.order_number} (Status: {order.status.value}, Total: ${order.total_amount})")
         return self.order_repo.get_with_details(order.id)

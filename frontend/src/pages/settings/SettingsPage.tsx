@@ -69,7 +69,7 @@ export const SettingsPage: React.FC = () => {
           className="p-4 rounded-input bg-surfaceAlt/50 border border-border flex flex-col sm:flex-row items-end gap-3"
         >
           <div className="w-full sm:w-72">
-            <FormField label="New Monetary Threshold (₹)" required>
+            <FormField label="New Monetary Threshold" required>
               <Input
                 type="number"
                 step="1"

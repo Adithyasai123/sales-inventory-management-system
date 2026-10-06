@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { SalesTrendPoint } from '../../types/dashboard';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatCompactCurrency } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
 import { useThemeColors } from '../../theme/ThemeProvider';
 
@@ -37,6 +37,10 @@ export const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
     previous_revenue: Number(item.previous_revenue || 0),
   }));
 
+  const isEmpty =
+    chartData.length === 0 ||
+    chartData.every((item) => item.revenue === 0 && item.previous_revenue === 0);
+
   return (
     <DashboardCard
       title={`Sales Trend (${rangeDays} Days)`}
@@ -44,8 +48,9 @@ export const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
       isLoading={isLoading}
       isError={isError}
       onRetry={onRetry}
-      isEmpty={chartData.length === 0}
-      emptyMessage="No data for this range"
+      isEmpty={isEmpty}
+      emptyMessage="No sales in this range"
+      emptyHint="Try selecting a wider date range to view revenue trend."
       action={
         <div className="flex items-center gap-3 text-caption">
           <span className="flex items-center gap-1.5">
@@ -91,12 +96,7 @@ export const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
               tickLine={false}
               axisLine={{ stroke: colors.border }}
               tick={{ fontSize: 10, fill: colors.textMuted }}
-              tickFormatter={(val) => {
-                if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
-                if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-                if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`;
-                return `₹${val}`;
-              }}
+              tickFormatter={(val) => formatCompactCurrency(val)}
               domain={[0, 'auto']}
             />
             <Tooltip

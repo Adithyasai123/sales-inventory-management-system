@@ -55,6 +55,7 @@ class CustomerResponse(BaseModel):
     city: Optional[str] = None
     country: Optional[str] = None
     is_active: bool
+    is_deleted: bool = False
     created_at: datetime
     updated_at: datetime
 

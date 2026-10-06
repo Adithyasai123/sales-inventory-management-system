@@ -1,6 +1,6 @@
 import math
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, status
 from sqlalchemy.orm import Session
 
@@ -109,8 +109,8 @@ def list_orders(
     search: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
-    sort_by: str = Query("created_at", regex="^(created_at|order_number|total_amount)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|order_number|total_amount)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -193,7 +193,7 @@ def export_orders_csv(
             o.created_at.strftime("%Y-%m-%d %H:%M:%S") if o.created_at else "",
         ])
     output.seek(0)
-    filename = f"orders_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"orders_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",

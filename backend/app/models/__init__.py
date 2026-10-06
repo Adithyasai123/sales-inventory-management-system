@@ -8,6 +8,7 @@ from app.models.approval import OrderApproval, ApprovalDecision
 from app.models.inventory import InventoryMovement, MovementType
 from app.models.email_log import EmailLog, EmailStatus
 from app.models.setting import SystemSetting
+from app.models.sequence import Sequence
 
 __all__ = [
     "Base",
@@ -27,4 +28,5 @@ __all__ = [
     "EmailLog",
     "EmailStatus",
     "SystemSetting",
+    "Sequence",
 ]

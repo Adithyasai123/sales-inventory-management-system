@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { TopCustomer } from '../../types/dashboard';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatCompactCurrency } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
 import { useThemeColors } from '../../theme/ThemeProvider';
 
@@ -32,6 +32,9 @@ export const TopCustomersChart: React.FC<TopCustomersChartProps> = ({
     total_revenue: Number(item.total_revenue || 0),
   }));
 
+  const isEmpty =
+    chartData.length === 0 || chartData.every((item) => item.total_revenue === 0);
+
   return (
     <DashboardCard
       title="Top Customers by Revenue"
@@ -39,8 +42,9 @@ export const TopCustomersChart: React.FC<TopCustomersChartProps> = ({
       isLoading={isLoading}
       isError={isError}
       onRetry={onRetry}
-      isEmpty={chartData.length === 0}
-      emptyMessage="No data for this range"
+      isEmpty={isEmpty}
+      emptyMessage="No customer sales in this range"
+      emptyHint="Completed orders will show customer revenue breakdown here."
     >
       <div className="w-full h-[200px] shrink-0">
         <ResponsiveContainer width="100%" height={200}>
@@ -54,12 +58,7 @@ export const TopCustomersChart: React.FC<TopCustomersChartProps> = ({
               tickLine={false}
               axisLine={{ stroke: colors.border }}
               tick={{ fontSize: 10, fill: colors.textMuted }}
-              tickFormatter={(val) => {
-                if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
-                if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-                if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`;
-                return `₹${val}`;
-              }}
+              tickFormatter={(val) => formatCompactCurrency(val)}
             />
             <YAxis
               type="category"
@@ -82,7 +81,7 @@ export const TopCustomersChart: React.FC<TopCustomersChartProps> = ({
                       <p className="text-text mt-1">
                         Total Revenue: {formatCurrency(item.total_revenue)}
                       </p>
-                      <p className="text-muted text-[11px]">
+                      <p className="text-muted text-caption">
                         Orders: {item.orders_count}
                       </p>
                     </div>

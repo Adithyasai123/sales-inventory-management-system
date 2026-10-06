@@ -22,10 +22,13 @@ class CustomerRepository(BaseRepository[Customer]):
         limit: int = 20,
         search: Optional[str] = None,
         is_active: Optional[bool] = None,
+        include_deleted: bool = False,
         sort_by: str = "name",
         sort_order: str = "asc",
     ) -> Tuple[List[Customer], int]:
-        query = self.db.query(Customer).filter(Customer.is_deleted == False)
+        query = self.db.query(Customer)
+        if not include_deleted:
+            query = query.filter(Customer.is_deleted == False)
 
         if is_active is not None:
             query = query.filter(Customer.is_active == is_active)

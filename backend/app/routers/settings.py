@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import require_role
+from app.dependencies import get_current_user, require_role
 from app.models.user import User, UserRole
 from app.repositories.setting_repo import SettingRepository
 from app.schemas.setting import (
@@ -15,17 +15,16 @@ from app.schemas.setting import (
 
 router = APIRouter(
     prefix="/settings",
-    tags=["System Settings (Admin/Manager)"],
-    dependencies=[Depends(require_role(UserRole.ADMIN, UserRole.MANAGER))],
+    tags=["System Settings"],
 )
 
 
 @router.get("", response_model=List[SystemSettingResponse])
 def get_all_settings(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+    current_user: User = Depends(get_current_user),
 ):
-    """Retrieve all configurable system settings."""
+    """Retrieve all configurable system settings. Accessible to all authenticated users for frontend formatting."""
     repo = SettingRepository(db)
     return repo.list_all()
 

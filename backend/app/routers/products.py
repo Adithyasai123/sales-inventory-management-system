@@ -1,7 +1,11 @@
 import math
+import io
+import csv
+from datetime import datetime, timezone
 from typing import Optional
 from decimal import Decimal
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -27,8 +31,9 @@ def list_products(
     category: Optional[str] = None,
     is_low_stock: Optional[bool] = None,
     is_active: Optional[bool] = None,
-    sort_by: str = Query("name", regex="^(name|sku|price|stock_quantity|created_at)$"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$"),
+    include_deleted: bool = Query(False),
+    sort_by: str = Query("name", pattern="^(name|sku|price|stock_quantity|created_at)$"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -42,6 +47,7 @@ def list_products(
         category=category,
         is_low_stock=is_low_stock,
         is_active=is_active,
+        include_deleted=include_deleted,
         sort_by=sort_by,
         sort_order=sort_order,
     )
@@ -105,6 +111,67 @@ def create_product(
     resp = ProductResponse.model_validate(product)
     resp.is_low_stock = product.stock_quantity <= product.reorder_level
     return resp
+
+
+@router.get("/export/csv")
+def export_products_csv(
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    is_low_stock: Optional[bool] = None,
+    is_active: Optional[bool] = None,
+    include_deleted: bool = Query(False),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export product catalog as CSV."""
+    repo = ProductRepository(db)
+    items, _ = repo.list_products(
+        skip=0,
+        limit=10000,
+        search=search,
+        category=category,
+        is_low_stock=is_low_stock,
+        is_active=is_active,
+        include_deleted=include_deleted,
+        sort_by="name",
+        sort_order="asc",
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID",
+        "SKU",
+        "Name",
+        "Category",
+        "Price",
+        "Cost Price",
+        "Stock Quantity",
+        "Reorder Level",
+        "Is Active",
+        "Is Deleted",
+        "Created At",
+    ])
+    for p in items:
+        writer.writerow([
+            p.id,
+            p.sku,
+            p.name,
+            p.category or "",
+            str(p.price),
+            str(p.cost_price) if p.cost_price is not None else "",
+            p.stock_quantity,
+            p.reorder_level,
+            "Yes" if p.is_active else "No",
+            "Yes" if getattr(p, "is_deleted", False) else "No",
+            p.created_at.strftime("%Y-%m-%d %H:%M:%S") if p.created_at else "",
+        ])
+    output.seek(0)
+    filename = f"products_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.get("/{id}", response_model=ProductResponse)
@@ -180,6 +247,26 @@ def delete_product(
     repo.delete(product, soft=True)
     db.commit()
     return MessageResponse(message=f"Product '{product.sku}' soft-deleted successfully.")
+
+
+@router.post("/{id}/restore", response_model=ProductResponse)
+def restore_product(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+):
+    """Restore a soft-deleted product."""
+    repo = ProductRepository(db)
+    product = repo.get_by_id_including_deleted(id)
+    if not product:
+        raise EntityNotFoundException("Product", id)
+
+    repo.restore(product)
+    db.commit()
+    db.refresh(product)
+    resp = ProductResponse.model_validate(product)
+    resp.is_low_stock = product.stock_quantity <= product.reorder_level
+    return resp
 
 
 @router.post("/{id}/adjust-stock", response_model=ProductResponse)
