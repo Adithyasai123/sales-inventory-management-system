@@ -181,6 +181,7 @@ export const LoginPage: React.FC = () => {
                   required
                   className="pl-9"
                   autoFocus
+                  autoComplete="username"
                 />
                 <Mail className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -196,6 +197,7 @@ export const LoginPage: React.FC = () => {
                   disabled={isLoading}
                   required
                   className="pl-9 pr-10"
+                  autoComplete="current-password"
                 />
                 <Lock className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <button
