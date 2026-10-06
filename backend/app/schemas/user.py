@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 import re
 from pydantic import BaseModel, Field, field_validator
 from app.models.user import UserRole
@@ -12,6 +12,9 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=6, description="Password with minimum 6 characters")
     full_name: str = Field(..., min_length=2, max_length=100)
     role: UserRole = UserRole.SALES
+    is_active: Optional[bool] = True
+    manager_id: Optional[int] = None
+    allowed_screens: Optional[List[str]] = None
 
     @field_validator("email")
     @classmethod
@@ -28,6 +31,8 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
+    manager_id: Optional[int] = None
+    allowed_screens: Optional[List[str]] = None
 
     @field_validator("email")
     @classmethod
@@ -46,6 +51,10 @@ class UserResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    is_super_admin: bool = False
+    manager_id: Optional[int] = None
+    created_by_id: Optional[int] = None
+    allowed_screens: List[str] = []
     is_deleted: bool = False
     created_at: datetime
     updated_at: datetime

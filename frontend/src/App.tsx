@@ -16,6 +16,7 @@ const InventoryPage = React.lazy(() => import('./pages/inventory/InventoryPage')
 const ApprovalsQueuePage = React.lazy(() => import('./pages/approvals/ApprovalsQueuePage').then(m => ({ default: m.ApprovalsQueuePage })));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const UsersPage = React.lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
+const AuditLogsPage = React.lazy(() => import('./pages/audit/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 export const App: React.FC = () => {
@@ -35,37 +36,96 @@ export const App: React.FC = () => {
             }
           >
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/orders" element={<OrdersListPage />} />
-            <Route path="/orders/create" element={<CreateOrderPage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/customers" element={<CustomersPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
+            
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute screenId="dashboard">
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute screenId="orders">
+                  <OrdersListPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/orders/create"
+              element={
+                <ProtectedRoute screenId="orders">
+                  <CreateOrderPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/products"
+              element={
+                <ProtectedRoute screenId="products">
+                  <ProductsPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute screenId="customers">
+                  <CustomersPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute screenId="inventory">
+                  <InventoryPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Manager / Admin Routes */}
             <Route
               path="/approvals"
               element={
-                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']} screenId="approvals">
                   <ApprovalsQueuePage />
                 </ProtectedRoute>
               }
             />
+            
             <Route
               path="/settings"
               element={
-                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']} screenId="settings">
                   <SettingsPage />
                 </ProtectedRoute>
               }
             />
 
-            {/* Admin Exclusive Routes */}
+            {/* User Management Route (Manager Super Admin & Admin) */}
             <Route
               path="/users"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']} screenId="users">
                   <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Audit & Transactional Notifications Route */}
+            <Route
+              path="/audit"
+              element={
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                  <AuditLogsPage />
                 </ProtectedRoute>
               }
             />

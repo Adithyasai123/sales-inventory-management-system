@@ -13,6 +13,7 @@ import {
   CheckSquare,
   UserCheck,
   Sliders,
+  Activity,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -25,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileDrawer = false,
   onCloseMobileDrawer,
 }) => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { data: pendingData } = usePendingApprovals({ page: 1, page_size: 1 });
   const pendingCount = pendingData?.total || 0;
 
@@ -34,36 +35,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
       to: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
+      screenId: 'dashboard',
       roles: ['ADMIN', 'MANAGER', 'SALES'],
     },
     {
       to: '/orders',
       label: 'Sales Orders',
       icon: ShoppingCart,
+      screenId: 'orders',
       roles: ['ADMIN', 'MANAGER', 'SALES'],
     },
     {
       to: '/products',
       label: 'Products',
       icon: Package,
+      screenId: 'products',
       roles: ['ADMIN', 'MANAGER', 'SALES'],
     },
     {
       to: '/customers',
       label: 'Customers',
       icon: Users,
+      screenId: 'customers',
       roles: ['ADMIN', 'MANAGER', 'SALES'],
     },
     {
       to: '/inventory',
       label: 'Inventory',
       icon: Layers,
+      screenId: 'inventory',
       roles: ['ADMIN', 'MANAGER', 'SALES'],
     },
     {
       to: '/approvals',
       label: 'Approvals',
       icon: CheckSquare,
+      screenId: 'approvals',
       badge: pendingCount > 0 ? pendingCount : undefined,
       roles: ['ADMIN', 'MANAGER'],
     },
@@ -71,19 +78,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
       to: '/settings',
       label: 'Settings',
       icon: Sliders,
+      screenId: 'settings',
       roles: ['ADMIN', 'MANAGER'],
     },
     {
       to: '/users',
-      label: 'User Admin',
+      label: isSuperAdmin ? 'User Management' : 'My Team',
       icon: UserCheck,
-      roles: ['ADMIN'],
+      screenId: 'users',
+      roles: ['MANAGER', 'ADMIN'],
+    },
+    {
+      to: '/audit',
+      label: 'Audit & Emails',
+      icon: Activity,
+      screenId: 'audit',
+      roles: ['MANAGER', 'ADMIN'],
     },
   ];
 
-  const filteredNav = navItems.filter((item) =>
-    user ? item.roles.includes(user.role) : false
-  );
+  const filteredNav = navItems.filter((item) => {
+    if (!user) return false;
+    // Manager is Super Admin and has access to all screens
+    if (isSuperAdmin) return true;
+
+    // Check basic role requirement
+    if (!item.roles.includes(user.role)) return false;
+
+    // Check screen access permissions configured by Manager
+    if (user.allowed_screens && user.allowed_screens.length > 0) {
+      return user.allowed_screens.includes(item.screenId);
+    }
+    return true;
+  });
 
   return (
     <aside
@@ -97,13 +124,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header: Logo mark + SIMS on one line */}
       <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-border shrink-0 px-1">
         <SimsLogo size={32} />
-        <span className="text-title text-sidebarText">
-          SIMS
-        </span>
+        <div>
+          <span className="text-title text-sidebarText block leading-tight">
+            SIMS
+          </span>
+          <span className="text-[10px] text-muted tracking-wider uppercase block">
+            Sales &amp; Inventory
+          </span>
+        </div>
       </div>
 
-      {/* Nav items in middle: 40px rows, 18px icons, no group labels */}
-      <nav className="flex-1 flex flex-col gap-1.5 overflow-hidden">
+      {/* Nav items in middle */}
+      <nav className="flex-1 flex flex-col gap-1.5 overflow-y-auto">
         {filteredNav.map((item) => {
           const Icon = item.icon;
           return (
@@ -113,9 +145,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={isMobileDrawer ? onCloseMobileDrawer : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center justify-between h-[40px] min-h-[40px] px-3.5 rounded-full text-body  transition-all duration-150',
+                  'flex items-center justify-between h-[40px] min-h-[40px] px-3.5 rounded-full text-body transition-all duration-150',
                   isActive
-                    ? 'bg-navActive text-navActiveText  shadow-card'
+                    ? 'bg-navActive text-navActiveText shadow-card'
                     : 'text-sidebarText/90 hover:text-sidebarText hover:bg-sidebarHover'
                 )
               }
@@ -135,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {item.badge !== undefined && (
                     <span
                       className={cn(
-                        'px-2 py-0.5 rounded-full text-[10px]  tabular-nums shrink-0',
+                        'px-2 py-0.5 rounded-full text-[10px] tabular-nums shrink-0',
                         isActive
                           ? 'bg-primary text-primaryText'
                           : 'bg-primary text-primaryText'

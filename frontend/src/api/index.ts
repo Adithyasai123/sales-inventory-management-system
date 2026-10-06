@@ -195,3 +195,34 @@ export const settingsApi = {
     return data;
   },
 };
+
+export interface EmailLogEntry {
+  id: number;
+  recipient: string;
+  subject: string;
+  body_preview?: string;
+  status: 'PENDING' | 'SENT' | 'FAILED';
+  error_message?: string;
+  retries: number;
+  created_at: string;
+  sent_at?: string;
+}
+
+export interface AuditStats {
+  total_emails: number;
+  sent_emails: number;
+  pending_emails: number;
+  failed_emails: number;
+  recent_movements: number;
+}
+
+export const auditApi = {
+  getEmails: async (params?: { status?: string; limit?: number }): Promise<EmailLogEntry[]> => {
+    const { data } = await apiClient.get<EmailLogEntry[]>('/audit/emails', { params });
+    return data;
+  },
+  getStats: async (): Promise<AuditStats> => {
+    const { data } = await apiClient.get<AuditStats>('/audit/stats');
+    return data;
+  },
+};

@@ -1,4 +1,5 @@
 import re
+from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 from app.models.user import UserRole
 
@@ -35,6 +36,9 @@ class UserMeResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    is_super_admin: bool = False
+    manager_id: Optional[int] = None
+    allowed_screens: List[str] = []
 
     class Config:
         from_attributes = True

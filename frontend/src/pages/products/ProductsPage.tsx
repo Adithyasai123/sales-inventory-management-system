@@ -14,7 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency } from '../../lib/utils';
-import { Plus, SlidersHorizontal, Trash2, Edit3, AlertTriangle } from 'lucide-react';
+import { Plus, SlidersHorizontal, Trash2, Edit3, AlertTriangle, Layers } from 'lucide-react';
 
 export const ProductsPage: React.FC = () => {
   const { isManager } = useAuth();
@@ -157,16 +157,33 @@ export const ProductsPage: React.FC = () => {
         return (
           <div className="flex items-center gap-2">
             <span
-              className={`tabular-nums  ${
-                isLow ? 'text-text ' : 'text-text'
+              className={`tabular-nums font-medium ${
+                isLow ? 'text-amber-500' : 'text-text'
               }`}
             >
               {p.stock_quantity}
             </span>
             {isLow && (
-              <span className="flex items-center gap-1 text-[10px] bg-surfaceAlt text-text px-2 py-0.5 rounded-full border border-border">
-                <AlertTriangle className="w-3 h-3 text-text" /> Low (Reorder: {p.reorder_level})
+              <span className="flex items-center gap-1 text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold">
+                <AlertTriangle className="w-3 h-3" /> Low Stock
               </span>
+            )}
+            {isLow && isManager && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAdjustingProduct(p);
+                  setAdjustData({
+                    movement_type: 'IN',
+                    quantity: Math.max(10, p.reorder_level * 2 - p.stock_quantity),
+                    reason: `Low stock replenishment (threshold: ${p.reorder_level})`,
+                  });
+                }}
+                className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent text-accentText hover:opacity-90 transition-opacity ml-1"
+                title={`Quick Restock ${p.sku}`}
+              >
+                + Restock
+              </button>
             )}
           </div>
         );
@@ -218,14 +235,29 @@ export const ProductsPage: React.FC = () => {
         hero="products"
         action={
           isManager && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleOpenCreate}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Add Product
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (data?.items && data.items.length > 0) {
+                    setAdjustingProduct(data.items[0]);
+                    setAdjustData({ movement_type: 'IN', quantity: 20, reason: 'Warehouse Inward Shipment' });
+                  }
+                }}
+                leftIcon={<Layers className="w-4 h-4" />}
+              >
+                Inward Stock
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleOpenCreate}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Add Product
+              </Button>
+            </div>
           )
         }
       />
@@ -270,6 +302,7 @@ export const ProductsPage: React.FC = () => {
         description="Enter product catalog details. The price must be strictly positive."
         confirmLabel=""
         cancelLabel="Close"
+        maxWidth="2xl"
       >
         <form onSubmit={handleSaveProduct} className="flex flex-col gap-3.5 mt-2">
           <div className="grid grid-cols-2 gap-3">

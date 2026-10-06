@@ -8,7 +8,7 @@ interface SlideOverProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
-  width?: 'md' | 'lg' | 'xl';
+  width?: 'md' | 'lg' | 'xl' | '2xl';
 }
 
 export const SlideOver: React.FC<SlideOverProps> = ({
@@ -45,6 +45,7 @@ export const SlideOver: React.FC<SlideOverProps> = ({
     md: 'max-w-md',
     lg: 'max-w-xl',
     xl: 'max-w-2xl',
+    '2xl': 'max-w-3xl',
   };
 
   return (

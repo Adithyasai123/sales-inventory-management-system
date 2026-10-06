@@ -7,8 +7,6 @@ import { SimsLogo } from '../../components/ui/SimsLogo';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import {
   ShieldCheck,
-  UserCheck,
-  Briefcase,
   Lock,
   Mail,
   Eye,
@@ -16,9 +14,7 @@ import {
   Layers,
   TrendingUp,
   AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 export const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
@@ -30,7 +26,6 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,16 +42,9 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickFill = (role: string, demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setSelectedRole(role);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-bg text-text selection:bg-accent selection:text-white">
-      {/* LEFT SIDE: Enterprise Stock Imagery & Brand Showcase (Desktop/Tablet Large) */}
+      {/* LEFT SIDE: Brand Showcase (Desktop/Tablet Large) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 relative overflow-hidden bg-slate-950 flex-col justify-between p-10 xl:p-14">
         {/* Background Stock Photo with Overlay */}
         <img
@@ -80,19 +68,11 @@ export const LoginPage: React.FC = () => {
               </span>
             </div>
           </div>
-
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-blue-100 text-xs backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-medium tracking-wide">System Operational</span>
-          </div>
         </div>
 
-        {/* Bottom Showcase Content */}
-        <div className="relative z-10 space-y-6 max-w-xl my-auto pt-16">
+        {/* Showcase Content */}
+        <div className="relative z-10 space-y-6 max-w-xl my-auto pt-10">
           <div className="space-y-3">
-            <div className="inline-block px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-medium uppercase tracking-wider">
-              Enterprise Ready
-            </div>
             <h2 className="text-3xl xl:text-4xl font-semibold text-white leading-tight font-serif">
               Intelligent Inventory Control &amp; Sales Orchestration.
             </h2>
@@ -142,10 +122,10 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer info */}
+        {/* Minimal Footer */}
         <div className="relative z-10 text-[11px] text-blue-200/60 flex items-center justify-between border-t border-white/10 pt-4">
-          <span>Enterprise Edition v2.4</span>
-          <span>SOC2 Type II &amp; ISO 27001 Certified</span>
+          <span>SIMS Sales &amp; Inventory Management</span>
+          <span>Fast, Reliable &amp; Secure</span>
         </div>
       </div>
 
@@ -194,12 +174,9 @@ export const LoginPage: React.FC = () => {
               <div className="relative">
                 <Input
                   type="email"
-                  placeholder="name@sims.local"
+                  placeholder="manager@sims.in"
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setSelectedRole(null);
-                  }}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   required
                   className="pl-9"
@@ -215,10 +192,7 @@ export const LoginPage: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setSelectedRole(null);
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   required
                   className="pl-9 pr-10"
@@ -243,68 +217,14 @@ export const LoginPage: React.FC = () => {
               isLoading={isLoading}
               className="w-full mt-2 font-medium"
             >
-              Sign In to SIMS
+              Login
             </Button>
           </form>
-
-          {/* Quick One-Click Demo Access */}
-          <div className="mt-8 pt-6 border-t border-border">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                One-Click Demo Roles
-              </span>
-              <span className="text-[11px] text-muted">Auto-fills credentials</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin', 'admin@sims.local', 'Admin@123456')}
-                className={cn(
-                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
-                  selectedRole === 'admin'
-                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
-                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
-                )}
-              >
-                <ShieldCheck className="w-4 h-4 text-accent" />
-                <span>Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('manager', 'manager@sims.local', 'Manager@123456')}
-                className={cn(
-                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
-                  selectedRole === 'manager'
-                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
-                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
-                )}
-              >
-                <Briefcase className="w-4 h-4 text-accent" />
-                <span>Manager</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('sales', 'sales@sims.local', 'Sales@123456')}
-                className={cn(
-                  'flex flex-col items-center justify-center p-2.5 rounded-card border text-xs transition-all duration-150 gap-1.5',
-                  selectedRole === 'sales'
-                    ? 'bg-primary/20 border-accent font-semibold text-text shadow-sm'
-                    : 'bg-surface hover:bg-surfaceAlt border-border text-text'
-                )}
-              >
-                <UserCheck className="w-4 h-4 text-accent" />
-                <span>Sales Rep</span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom Footer Notice */}
+        {/* Clean Footer Notice */}
         <div className="w-full text-center text-xs text-muted pt-4 border-t border-border/40">
-          Protected by enterprise-grade RBAC &amp; JWT authentication.
+          SIMS Sales &amp; Inventory Management System
         </div>
       </div>
     </div>

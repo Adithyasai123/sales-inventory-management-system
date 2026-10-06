@@ -8,10 +8,10 @@ def test_sales_forbidden_on_user_admin(client: TestClient, sales_headers):
     assert response.json()["code"] == "PERMISSION_DENIED"
 
 
-def test_manager_forbidden_on_user_admin(client: TestClient, manager_headers):
+def test_manager_can_access_user_admin(client: TestClient, manager_headers):
     response = client.get("/api/v1/users", headers=manager_headers)
-    assert response.status_code == 403
-    assert response.json()["code"] == "PERMISSION_DENIED"
+    assert response.status_code == 200
+    assert "items" in response.json()
 
 
 def test_admin_can_access_user_admin(client: TestClient, admin_headers):

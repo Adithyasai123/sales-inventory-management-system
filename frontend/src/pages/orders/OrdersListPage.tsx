@@ -9,8 +9,9 @@ import { Button } from '../../components/ui/Button';
 import { SlideOver } from '../../components/ui/SlideOver';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { Plus, Eye, Ban, CheckCircle2, Clock, Download } from 'lucide-react';
+import { Plus, Eye, Ban, CheckCircle2, Clock, Download, FileText, Printer } from 'lucide-react';
 import { ordersApi } from '../../api';
+import { InvoiceModal } from '../../components/orders/InvoiceModal';
 
 export const OrdersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export const OrdersListPage: React.FC = () => {
   const [cancellingOrder, setCancellingOrder] = useState<SalesOrder | null>(null);
   const cancelOrderMutation = useCancelOrder();
   const [isExporting, setIsExporting] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   const handleExportCsv = async () => {
     try {
@@ -99,6 +101,16 @@ export const OrdersListPage: React.FC = () => {
             title="View Details"
           >
             <Eye className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedOrderId(o.id);
+              setIsInvoiceOpen(true);
+            }}
+            className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+            title="Tax Invoice"
+          >
+            <FileText className="w-3.5 h-3.5" />
           </button>
           {['DRAFT', 'PENDING_APPROVAL'].includes(o.status) && (
             <button
@@ -208,6 +220,19 @@ export const OrdersListPage: React.FC = () => {
                   {formatCurrency(orderDetail.total_amount)}
                 </span>
               </div>
+            </div>
+
+            {/* Quick Actions Strip */}
+            <div className="flex items-center justify-between p-3 rounded-card bg-surfaceAlt/50 border border-border">
+              <span className="text-caption text-textMuted font-medium">Official Tax Documentation</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsInvoiceOpen(true)}
+                leftIcon={<Printer className="w-3.5 h-3.5" />}
+              >
+                Print / View Invoice
+              </Button>
             </div>
 
             {/* Customer Details */}
@@ -337,6 +362,13 @@ export const OrdersListPage: React.FC = () => {
         confirmLabel="Cancel Order"
         variant="danger"
         isLoading={cancelOrderMutation.isPending}
+      />
+
+      {/* Printable Tax Invoice Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceOpen}
+        onClose={() => setIsInvoiceOpen(false)}
+        order={orderDetail || null}
       />
     </div>
   );

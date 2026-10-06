@@ -61,13 +61,15 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section) or {}
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    connect_args = {}
+    if "tidbcloud.com" in settings.DATABASE_URL or "ssl" in settings.DATABASE_URL.lower():
+        connect_args["ssl"] = {"ssl_mode": "REQUIRED"}
 
-    connectable = engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
+    from sqlalchemy import create_engine
+    connectable = create_engine(
+        settings.DATABASE_URL,
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     with connectable.connect() as connection:

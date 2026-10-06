@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: sims-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        value: 09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+      - key: JWT_REFRESH_SECRET_KEY
+        value: 87b9201f114c0a52f9543e33fbe4d9b23a54b38d381014e7811dc31f8b4d89e2
+      - key: BACKEND_CORS_ORIGINS
+        value: "*"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_TLS
+        value: "true"

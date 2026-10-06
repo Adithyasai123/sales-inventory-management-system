@@ -132,46 +132,46 @@ export const lightTheme: ThemeDefinition = {
 
 export const darkTheme: ThemeDefinition = {
   name: 'dark',
-  metaThemeColor: '#0A1220',
+  metaThemeColor: '#000000',
   colors: {
-    // Deep blue dark page & surfaces with AA contrast
-    bg: '#0A1220',
-    sidebar: '#0D1830',
-    sidebarBorder: '#243A5F',
-    sidebarText: '#F2F7FF',
-    sidebarIcon: '#7FB0EA',
-    sidebarHover: '#182A4A',
-    surface: '#12203A',
-    surfaceAlt: '#182A4A',
-    border: '#243A5F',
+    // True black page & sleek dark surfaces with AA contrast
+    bg: '#000000',
+    sidebar: '#0A0A0A',
+    sidebarBorder: '#1F1F23',
+    sidebarText: '#F4F4F5',
+    sidebarIcon: '#A1A1AA',
+    sidebarHover: '#18181B',
+    surface: '#0F0F11',
+    surfaceAlt: '#18181B',
+    border: '#27272A',
 
-    // Crisp high-contrast dark text (#F2F7FF) & clear muted text (#B4C2DC)
-    text: '#F2F7FF',
-    textMuted: '#B4C2DC',
+    // Crisp high-contrast dark text (#F4F4F5) & clear muted text (#A1A1AA)
+    text: '#F4F4F5',
+    textMuted: '#A1A1AA',
 
-    // Primary #6FA8F0 with primaryText #0A1220; accent/ink #D6E6FF with dark text #0A1220
-    primary: '#6FA8F0',
-    primaryText: '#0A1220',
-    primarySoft: '#182A4A',
-    accent: '#D6E6FF',
-    accentText: '#0A1220',
-    navActiveBg: '#6FA8F0',
-    navActiveText: '#0A1220',
+    // Primary & Accent neutral high-contrast monochromatic design
+    primary: '#E4E4E7',
+    primaryText: '#000000',
+    primarySoft: '#18181B',
+    accent: '#FFFFFF',
+    accentText: '#000000',
+    navActiveBg: '#FFFFFF',
+    navActiveText: '#000000',
 
-    // Charts: #6FA8F0, #3D75C9, #D6E6FF, #7C93B8, #2A4F8F
-    chart1: '#6FA8F0',
-    chart2: '#3D75C9',
-    chart3: '#D6E6FF',
-    chart4: '#7C93B8',
-    chart5: '#2A4F8F',
+    // Charts: sleek high-contrast neutrals on black
+    chart1: '#FFFFFF',
+    chart2: '#A1A1AA',
+    chart3: '#71717A',
+    chart4: '#52525B',
+    chart5: '#3F3F46',
 
     // Status Tints
-    success: '#6FA8F0',
-    successSoft: '#182A4A',
-    warning: '#FBBF24',
-    warningSoft: '#452A0A',
-    danger: '#F87171',
-    dangerSoft: '#451A1A',
+    success: '#22C55E',
+    successSoft: '#052E16',
+    warning: '#EAB308',
+    warningSoft: '#422006',
+    danger: '#EF4444',
+    dangerSoft: '#450A0A',
   },
   radius: {
     card: '24px',

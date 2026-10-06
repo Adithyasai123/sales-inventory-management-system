@@ -1,19 +1,31 @@
 import React, { useEffect } from 'react';
 import { Button } from './Button';
 import { X, AlertCircle } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  description: string;
+  description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'primary' | 'forest' | 'danger';
   isLoading?: boolean;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | string;
+  className?: string;
   children?: React.ReactNode;
 }
+
+const maxWidthClasses: Record<string, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+};
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
@@ -25,6 +37,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   cancelLabel = 'Cancel',
   variant = 'primary',
   isLoading = false,
+  maxWidth = 'md',
+  className,
   children,
 }) => {
   useEffect(() => {
@@ -57,7 +71,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div
-        className="relative z-10 w-full max-w-md bg-surface rounded-card border border-border shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200"
+        className={cn(
+          'relative z-10 w-full bg-surface rounded-card border border-border shadow-2xl p-6 flex flex-col gap-4 animate-in zoom-in-95 duration-200',
+          maxWidthClasses[maxWidth] || maxWidth,
+          className
+        )}
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}

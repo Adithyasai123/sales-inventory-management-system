@@ -21,6 +21,7 @@ export default {
         border: "rgb(var(--color-border-rgb) / <alpha-value>)",
         text: "rgb(var(--color-text-rgb) / <alpha-value>)",
         muted: "rgb(var(--color-textMuted-rgb) / <alpha-value>)",
+        textMuted: "rgb(var(--color-textMuted-rgb) / <alpha-value>)",
 
         primaryText: "rgb(var(--color-primaryText-rgb) / <alpha-value>)",
         accentText: "rgb(var(--color-accentText-rgb) / <alpha-value>)",

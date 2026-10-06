@@ -90,107 +90,231 @@ def seed_database() -> None:
 
         db.flush()
 
-        # 2. Users (Admin, Manager, Sales)
-        users_data = [
+        # 2. Users (Exactly One Super Admin, Multiple Regional Managers, and Scoped Employees)
+        # First create the single Super Admin
+        super_admin = db.query(User).filter_by(email="manager@sims.in").first()
+        if not super_admin:
+            super_admin = User(
+                email="manager@sims.in",
+                hashed_password=get_password_hash("Manager@123456"),
+                full_name="Rajesh Sharma",
+                role=UserRole.MANAGER,
+                is_active=True,
+                is_super_admin=True,
+            )
+            db.add(super_admin)
+            db.flush()
+            logger.info("Seeded Sole Super Admin: manager@sims.in")
+        else:
+            super_admin.is_super_admin = True
+            db.flush()
+
+        # Regional Managers created by Super Admin
+        managers_data = [
             {
-                "email": "admin@sims.local",
-                "full_name": "Eleanor Vance",
-                "password": "Admin@123456",
-                "role": UserRole.ADMIN,
-            },
-            {
-                "email": "admin@sims.com",
-                "full_name": "Eleanor Vance",
-                "password": "Admin@123456",
-                "role": UserRole.ADMIN,
-            },
-            {
-                "email": "manager@sims.local",
-                "full_name": "Marcus Sterling",
+                "email": "priya.manager@sims.in",
+                "full_name": "Priya Patel",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
+                "is_super_admin": False,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
             },
             {
-                "email": "manager@sims.com",
-                "full_name": "Marcus Sterling",
+                "email": "vikram.manager@sims.in",
+                "full_name": "Vikram Malhotra",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
+                "is_super_admin": False,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
             },
             {
-                "email": "sales@sims.local",
-                "full_name": "Sarah Connor",
-                "password": "Sales@123456",
-                "role": UserRole.SALES,
-            },
-            {
-                "email": "sales@sims.com",
-                "full_name": "Sarah Connor",
-                "password": "Sales@123456",
-                "role": UserRole.SALES,
+                "email": "admin@sims.in",
+                "full_name": "Suresh Raina",
+                "password": "Admin@123456",
+                "role": UserRole.ADMIN,
+                "is_super_admin": False,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
             },
         ]
 
-        for u_data in users_data:
-            existing_user = db.query(User).filter_by(email=u_data["email"]).first()
-            if not existing_user:
-                new_user = User(
-                    email=u_data["email"],
-                    hashed_password=get_password_hash(u_data["password"]),
-                    full_name=u_data["full_name"],
-                    role=u_data["role"],
+        mgr_map = {}
+        for m_data in managers_data:
+            existing = db.query(User).filter_by(email=m_data["email"]).first()
+            if not existing:
+                new_mgr = User(
+                    email=m_data["email"],
+                    hashed_password=get_password_hash(m_data["password"]),
+                    full_name=m_data["full_name"],
+                    role=m_data["role"],
                     is_active=True,
+                    is_super_admin=m_data["is_super_admin"],
+                    manager_id=m_data["manager_id"],
+                    created_by_id=m_data["created_by_id"],
                 )
-                db.add(new_user)
-                logger.info(f"Seeded user: {u_data['email']} ({u_data['role'].value})")
+                db.add(new_mgr)
+                db.flush()
+                mgr_map[m_data["email"]] = new_mgr
+                logger.info(f"Seeded Manager: {m_data['email']}")
+            else:
+                mgr_map[m_data["email"]] = existing
+
+        priya_mgr = mgr_map.get("priya.manager@sims.in") or super_admin
+        vikram_mgr = mgr_map.get("vikram.manager@sims.in") or super_admin
+
+        # Employees assigned to their respective Managers
+        employees_data = [
+            # Super Admin's direct sales rep
+            {
+                "email": "sales@sims.in",
+                "full_name": "Amit Verma",
+                "password": "Sales@123456",
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
+            },
+            # Priya's team
+            {
+                "email": "sneha.reddy@sims.in",
+                "full_name": "Sneha Reddy",
+                "password": "Sales@123456",
+                "manager_id": priya_mgr.id,
+                "created_by_id": priya_mgr.id,
+            },
+            {
+                "email": "ananya.iyer@sims.in",
+                "full_name": "Ananya Iyer",
+                "password": "Sales@123456",
+                "manager_id": priya_mgr.id,
+                "created_by_id": priya_mgr.id,
+            },
+            # Vikram's team
+            {
+                "email": "rahul.deshmukh@sims.in",
+                "full_name": "Rahul Deshmukh",
+                "password": "Sales@123456",
+                "manager_id": vikram_mgr.id,
+                "created_by_id": vikram_mgr.id,
+            },
+            {
+                "email": "kavita.nair@sims.in",
+                "full_name": "Kavita Nair",
+                "password": "Sales@123456",
+                "manager_id": vikram_mgr.id,
+                "created_by_id": vikram_mgr.id,
+            },
+        ]
+
+        for e_data in employees_data:
+            existing = db.query(User).filter_by(email=e_data["email"]).first()
+            if not existing:
+                new_emp = User(
+                    email=e_data["email"],
+                    hashed_password=get_password_hash(e_data["password"]),
+                    full_name=e_data["full_name"],
+                    role=UserRole.SALES,
+                    is_active=True,
+                    is_super_admin=False,
+                    manager_id=e_data["manager_id"],
+                    created_by_id=e_data["created_by_id"],
+                )
+                db.add(new_emp)
+                logger.info(f"Seeded Employee: {e_data['email']} under Manager ID {e_data['manager_id']}")
 
         db.flush()
 
-        # 3. Customers
+        # 3. Customers (Indian Enterprises and Organizations)
         customers_data = [
             {
-                "name": "Apex Global Logistics",
-                "email": "procurement@apexlogistics.com",
-                "phone": "+1-555-0101",
-                "company": "Apex Global LLC",
-                "address": "742 Evergreen Terrace",
-                "city": "Springfield",
-                "country": "USA",
+                "name": "Reliance Retail Ltd",
+                "email": "procurement@relianceretail.in",
+                "phone": "+91 98201 12345",
+                "company": "Reliance Retail Ventures",
+                "address": "Maker Chambers IV, Nariman Point",
+                "city": "Mumbai",
+                "country": "India",
             },
             {
-                "name": "Blue Horizon Retailers",
-                "email": "orders@bluehorizon.io",
-                "phone": "+1-555-0102",
-                "company": "Blue Horizon Retail Inc",
-                "address": "100 Industrial Parkway",
-                "city": "Austin",
-                "country": "USA",
+                "name": "Tata Consumer Products",
+                "email": "orders@tataconsumer.in",
+                "phone": "+91 98450 11223",
+                "company": "Tata Consumer Ltd",
+                "address": "1 Kirloskar Business Park, Hebbal",
+                "city": "Bengaluru",
+                "country": "India",
             },
             {
-                "name": "Cascade Digital Media",
-                "email": "billing@cascademedia.com",
-                "phone": "+1-555-0103",
-                "company": "Cascade Media Corp",
-                "address": "452 Silicon Ave",
-                "city": "Seattle",
-                "country": "USA",
+                "name": "Infosys Tech Solutions",
+                "email": "procurement@infosys.in",
+                "phone": "+91 98801 44556",
+                "company": "Infosys Technologies Ltd",
+                "address": "Electronics City, Hosur Road",
+                "city": "Bengaluru",
+                "country": "India",
             },
             {
-                "name": "Delta Manufacturing Ltd",
-                "email": "supply@deltamfg.co.uk",
-                "phone": "+44-20-7946-0991",
-                "company": "Delta Manufacturing",
-                "address": "12 Canary Wharf",
-                "city": "London",
-                "country": "UK",
+                "name": "Mahindra Logistics Hub",
+                "email": "billing@mahindralogistics.in",
+                "phone": "+91 98220 99887",
+                "company": "Mahindra Logistics Ltd",
+                "address": "Hinjewadi Tech Park Phase 1",
+                "city": "Pune",
+                "country": "India",
             },
             {
-                "name": "Echo Dynamics Tech",
-                "email": "accounts@echodynamics.de",
-                "phone": "+49-30-123456",
-                "company": "Echo Dynamics GmbH",
-                "address": "Friedrichstraße 50",
-                "city": "Berlin",
-                "country": "Germany",
+                "name": "Adani Distribution Enterprises",
+                "email": "supply@adanigroup.in",
+                "phone": "+91 98980 33445",
+                "company": "Adani Enterprises",
+                "address": "SG Highway, Bodakdev",
+                "city": "Ahmedabad",
+                "country": "India",
+            },
+            {
+                "name": "Wipro Digital Retail",
+                "email": "accounts@wipro.in",
+                "phone": "+91 99002 66778",
+                "company": "Wipro Enterprises",
+                "address": "Doddakannelli, Sarjapur Road",
+                "city": "Bengaluru",
+                "country": "India",
+            },
+            {
+                "name": "Sun Pharma Healthcare Supply",
+                "email": "orders@sunpharma.in",
+                "phone": "+91 98112 77889",
+                "company": "Sun Pharma Industries",
+                "address": "Goregaon East Western Express Hwy",
+                "city": "Mumbai",
+                "country": "India",
+            },
+            {
+                "name": "Blue Horizon Retail India",
+                "email": "contact@bluehorizon.in",
+                "phone": "+91 97110 55667",
+                "company": "Blue Horizon India Pvt Ltd",
+                "address": "Connaught Place, Barakhamba Road",
+                "city": "New Delhi",
+                "country": "India",
+            },
+            {
+                "name": "Delta Manufacturing Chennai",
+                "email": "supply@deltamfg.in",
+                "phone": "+91 98401 22334",
+                "company": "Delta Mfg India Pvt Ltd",
+                "address": "Guindy Industrial Estate, Anna Salai",
+                "city": "Chennai",
+                "country": "India",
+            },
+            {
+                "name": "Apollo Supply Chain India",
+                "email": "logistics@apollosupply.in",
+                "phone": "+91 98490 66778",
+                "company": "Apollo Health & Logistics",
+                "address": "Jubilee Hills Road No. 36",
+                "city": "Hyderabad",
+                "country": "India",
             },
         ]
 

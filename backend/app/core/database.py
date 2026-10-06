@@ -14,6 +14,8 @@ else:
         "pool_size": 10,
         "max_overflow": 20,
     })
+    if "tidbcloud.com" in settings.DATABASE_URL or "ssl" in settings.DATABASE_URL.lower():
+        engine_kwargs["connect_args"] = {"ssl": {"ssl_mode": "REQUIRED"}}
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 

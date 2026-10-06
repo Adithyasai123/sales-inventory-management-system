@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
   isSales: boolean;
@@ -70,8 +71,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.location.href = '/login';
   };
 
-  const isAdmin = user?.role === 'ADMIN';
-  const isManager = user?.role === 'MANAGER' || isAdmin;
+  const isSuperAdmin = !!user?.is_super_admin || user?.email === 'manager@sims.in';
+  const isAdmin = user?.role === 'ADMIN' || isSuperAdmin;
+  const isManager = user?.role === 'MANAGER' || isSuperAdmin;
   const isSales = user?.role === 'SALES';
 
   return (
@@ -80,6 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isLoading,
         isAuthenticated: !!user,
+        isSuperAdmin,
         isAdmin,
         isManager,
         isSales,

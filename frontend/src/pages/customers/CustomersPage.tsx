@@ -11,7 +11,9 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { Button } from '../../components/ui/Button';
 import { FormField, Input } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { Toggle } from '../../components/ui/Toggle';
 import { Plus, Edit3, Trash2, Mail, Phone, Building } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export const CustomersPage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -127,15 +129,36 @@ export const CustomersPage: React.FC = () => {
       key: 'status',
       header: 'Status',
       render: (c) => (
-        <span
-          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-            c.is_active
-              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-              : 'bg-surfaceAlt text-muted border-border'
-          }`}
-        >
-          {c.is_active ? 'Active' : 'Inactive'}
-        </span>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Toggle
+            size="sm"
+            checked={c.is_active}
+            disabled={updateCustomerMutation.isPending}
+            onChange={async (newChecked) => {
+              await updateCustomerMutation.mutateAsync({
+                id: c.id,
+                payload: { is_active: newChecked } as any,
+              });
+            }}
+          />
+          <span
+            className={cn(
+              'text-[11px] font-medium transition-colors select-none cursor-pointer hover:underline',
+              c.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'
+            )}
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!updateCustomerMutation.isPending) {
+                await updateCustomerMutation.mutateAsync({
+                  id: c.id,
+                  payload: { is_active: !c.is_active } as any,
+                });
+              }
+            }}
+          >
+            {c.is_active ? 'Active' : 'Inactive'}
+          </span>
+        </div>
       ),
     },
     {
@@ -205,6 +228,7 @@ export const CustomersPage: React.FC = () => {
         description="Enter customer profile details. Email address must be unique."
         confirmLabel=""
         cancelLabel="Close"
+        maxWidth="2xl"
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 mt-2">
           <FormField label="Full Name / Primary Contact" required>

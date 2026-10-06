@@ -10,6 +10,7 @@ from app.routers import (
     inventory,
     dashboard,
     settings,
+    audit,
 )
 
 api_router = APIRouter()
@@ -23,3 +24,4 @@ api_router.include_router(approvals.router)
 api_router.include_router(inventory.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(settings.router)
+api_router.include_router(audit.router)
