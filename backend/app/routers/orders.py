@@ -140,6 +140,67 @@ def list_orders(
     )
 
 
+@router.get("/export/csv")
+def export_orders_csv(
+    status: Optional[OrderStatus] = None,
+    customer_id: Optional[int] = None,
+    search: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export filtered sales orders as a downloadable CSV report."""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+
+    repo = OrderRepository(db)
+    items, _ = repo.list_orders(
+        skip=0,
+        limit=5000,
+        status=status,
+        customer_id=customer_id,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        sort_by="created_at",
+        sort_order="desc",
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Order Number",
+        "Customer",
+        "Creator",
+        "Status",
+        "Subtotal",
+        "Tax Amount",
+        "Total Amount",
+        "Requires Approval",
+        "Created At",
+    ])
+    for o in items:
+        writer.writerow([
+            o.order_number,
+            o.customer.name if o.customer else "N/A",
+            o.creator.full_name if o.creator else "N/A",
+            o.status.value,
+            str(o.subtotal),
+            str(o.tax_amount),
+            str(o.total_amount),
+            "Yes" if o.requires_approval else "No",
+            o.created_at.strftime("%Y-%m-%d %H:%M:%S") if o.created_at else "",
+        ])
+    output.seek(0)
+    filename = f"orders_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.get("/{id}", response_model=OrderDetailResponse)
 def get_order_detail(
     id: int,

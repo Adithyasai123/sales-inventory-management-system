@@ -188,17 +188,27 @@ Open `http://localhost:5173` in your browser.
 
 ## 7. Running the Automated Test Suite
 
-The backend includes a comprehensive `pytest` test suite covering authentication, order workflows below and above the threshold, pessimistic row-level locking, conflict handling (`409`), inventory movement ledgers, and RBAC security boundaries:
+The backend includes a comprehensive `pytest` test suite with **37 passing unit & integration tests** covering authentication, order workflows below and above the threshold, pessimistic row-level locking, conflict handling (`409`), inventory movement ledgers, RBAC security boundaries, analytics endpoints, and CSV export streams:
 
 ```bash
 cd backend
 
-# Run the full test suite
+# Run the full test suite (37 tests)
 pytest -v
 
 # Run with test coverage report
 pytest --cov=app tests/
 ```
+
+---
+
+## 8. Database Explorer & Real-Time Management
+
+- **Web Database Explorer:** `http://localhost:8080` (Browse tables, execute SQL queries, inspect schemas, and export records via `sqlite-web`).
+- **Data Export Endpoints:**
+  - `GET /api/v1/orders/export/csv` — Stream filtered sales orders as CSV.
+  - `GET /api/v1/inventory/movements/export/csv` — Stream full inventory movement audit trail as CSV.
+  - Front-end 1-click **Export CSV** buttons integrated in both Orders and Inventory Ledger views.
 
 ### Test Coverage Highlights:
 - `test_order_creation_below_threshold_auto_completes`: Auto-completes order and deducts stock when total $\le$ threshold.

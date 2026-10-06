@@ -59,3 +59,10 @@ def test_inventory_movements_history(client: TestClient, sales_headers, seed_dat
     data = res.json()
     assert "items" in data
     assert "total" in data
+
+
+def test_export_inventory_movements_csv(client: TestClient, admin_headers, seed_data):
+    res = client.get("/api/v1/inventory/movements/export/csv", headers=admin_headers)
+    assert res.status_code == 200
+    assert "text/csv" in res.headers["content-type"]
+    assert "Movement ID,Date,Product SKU,Product Name" in res.text

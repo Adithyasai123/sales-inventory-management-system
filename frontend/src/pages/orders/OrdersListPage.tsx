@@ -9,7 +9,8 @@ import { Button } from '../../components/ui/Button';
 import { SlideOver } from '../../components/ui/SlideOver';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { Plus, Eye, Ban, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Eye, Ban, CheckCircle2, Clock, Download } from 'lucide-react';
+import { ordersApi } from '../../api';
 
 export const OrdersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +31,29 @@ export const OrdersListPage: React.FC = () => {
 
   const [cancellingOrder, setCancellingOrder] = useState<SalesOrder | null>(null);
   const cancelOrderMutation = useCancelOrder();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await ordersApi.exportCsv({
+        search: search || undefined,
+        status: (statusFilter as OrderStatus) || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('Failed to export CSV', e);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const columns: Column<SalesOrder>[] = [
     {
@@ -96,14 +120,25 @@ export const OrdersListPage: React.FC = () => {
         title="Sales Orders"
         subtitle="Track order processing lifecycles, stock verification, and approval statuses."
         action={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => navigate('/orders/create')}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            Create Order
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+              isLoading={isExporting}
+              leftIcon={<Download className="w-4 h-4" />}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/orders/create')}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Create Order
+            </Button>
+          </div>
         }
       />
 

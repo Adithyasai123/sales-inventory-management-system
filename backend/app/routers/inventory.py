@@ -65,6 +65,63 @@ def list_inventory_movements(
     )
 
 
+@router.get("/movements/export/csv")
+def export_inventory_movements_csv(
+    product_id: Optional[int] = None,
+    movement_type: Optional[MovementType] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export inventory movements ledger as a downloadable CSV report."""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+
+    repo = InventoryRepository(db)
+    items, _ = repo.list_movements(
+        skip=0,
+        limit=10000,
+        product_id=product_id,
+        movement_type=movement_type,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Movement ID",
+        "Date",
+        "Product SKU",
+        "Product Name",
+        "Movement Type",
+        "Quantity",
+        "Balance After",
+        "Reference Order ID",
+        "Reason",
+    ])
+    for m in items:
+        writer.writerow([
+            m.id,
+            m.created_at.strftime("%Y-%m-%d %H:%M:%S") if m.created_at else "",
+            m.product.sku if m.product else "UNKNOWN",
+            m.product.name if m.product else "Unknown Product",
+            m.movement_type.value,
+            m.quantity,
+            m.balance_after,
+            m.reference_order_id or "",
+            m.reason or "",
+        ])
+    output.seek(0)
+    filename = f"inventory_movements_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.get("/low-stock", response_model=List[LowStockAlertResponse])
 def get_low_stock_alerts(
     db: Session = Depends(get_db),

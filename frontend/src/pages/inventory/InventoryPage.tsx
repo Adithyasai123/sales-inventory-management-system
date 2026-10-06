@@ -4,7 +4,9 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { InventoryMovement, LowStockAlert, MovementType } from '../../types/inventory';
 import { formatDate } from '../../lib/utils';
-import { Layers, AlertTriangle, ArrowDownRight, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { Layers, AlertTriangle, ArrowDownRight, ArrowUpRight, RefreshCw, Download } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { inventoryApi } from '../../api';
 
 export const InventoryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'movements' | 'low-stock'>('movements');
@@ -18,6 +20,28 @@ export const InventoryPage: React.FC = () => {
   });
 
   const { data: lowStockData, isLoading: isLoadingLowStock } = useLowStockAlerts();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await inventoryApi.exportMovementsCsv({
+        movement_type: (movementFilter as MovementType) || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventory_movements_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('Failed to export CSV', e);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const movementColumns: Column<InventoryMovement>[] = [
     {
@@ -162,6 +186,17 @@ export const InventoryPage: React.FC = () => {
       <PageHeader
         title="Inventory & Stock Ledger"
         subtitle="Immutable stock movement records, audit balances, and proactive reorder alerts."
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            isLoading={isExporting}
+            leftIcon={<Download className="w-4 h-4" />}
+          >
+            Export Ledger CSV
+          </Button>
+        }
       />
 
       {activeTab === 'movements' ? (

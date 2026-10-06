@@ -124,3 +124,10 @@ def test_cancel_pending_order(client: TestClient, sales_headers, seed_data):
     cancel_res = client.post(f"/api/v1/orders/{order_id}/cancel", headers=sales_headers)
     assert cancel_res.status_code == 200
     assert cancel_res.json()["status"] == "CANCELLED"
+
+
+def test_export_orders_csv(client: TestClient, sales_headers, seed_data):
+    res = client.get("/api/v1/orders/export/csv", headers=sales_headers)
+    assert res.status_code == 200
+    assert "text/csv" in res.headers["content-type"]
+    assert "Order Number,Customer,Creator,Status" in res.text

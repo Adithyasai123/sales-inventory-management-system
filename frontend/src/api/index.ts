@@ -120,6 +120,13 @@ export const ordersApi = {
     const { data } = await apiClient.post<OrderDetail>(`/orders/${id}/cancel`);
     return data;
   },
+  exportCsv: async (params?: Record<string, any>): Promise<Blob> => {
+    const response = await apiClient.get('/orders/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 export const approvalsApi = {
@@ -141,6 +148,13 @@ export const inventoryApi = {
   getLowStockAlerts: async (): Promise<LowStockAlert[]> => {
     const { data } = await apiClient.get<LowStockAlert[]>('/inventory/low-stock');
     return data;
+  },
+  exportMovementsCsv: async (params?: Record<string, any>): Promise<Blob> => {
+    const response = await apiClient.get('/inventory/movements/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };
 
