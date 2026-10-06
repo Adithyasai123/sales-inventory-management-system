@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-bg text-text selection:bg-accent selection:text-white">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-bg text-text selection:bg-accent selection:text-accentText">
       {/* LEFT SIDE: Brand Showcase (Desktop/Tablet Large) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 relative overflow-hidden bg-slate-950 flex-col justify-between p-10 xl:p-14">
         {/* Background Stock Photo with Overlay */}
