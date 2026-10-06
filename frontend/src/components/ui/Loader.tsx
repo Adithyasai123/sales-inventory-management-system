@@ -54,14 +54,18 @@ export interface PageLoaderProps {
 
 export const PageLoader: React.FC<PageLoaderProps> = ({ message = 'Loading workspace...' }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full p-8 animate-fadeIn">
-      <div className="relative flex items-center justify-center p-6 rounded-card bg-surfaceAlt/80 backdrop-blur border border-border shadow-card">
-        <SimsLogo size={48} className="animate-pulse" />
-        <div className="absolute inset-0 rounded-card border-2 border-accent/20 border-t-accent animate-spin" />
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg/85 backdrop-blur-sm animate-fadeIn">
+      <div className="flex flex-col items-center gap-3">
+        <div className="relative flex items-center justify-center w-11 h-11">
+          <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+          <SimsLogo size={22} className="opacity-90" />
+        </div>
+        {message && (
+          <p className="text-xs font-medium text-textMuted tracking-wider uppercase">
+            {message}
+          </p>
+        )}
       </div>
-      <p className="mt-4 text-caption font-semibold text-textMuted tracking-wider uppercase">
-        {message}
-      </p>
     </div>
   );
 };

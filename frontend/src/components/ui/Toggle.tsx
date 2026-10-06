@@ -33,7 +33,7 @@ export const Toggle: React.FC<ToggleProps> = ({
   // Dimensions, thumb size, and exact translateX distance in pixels
   const sizeConfig = {
     sm: {
-      track: 'w-8 h-4.5',
+      track: 'w-8 h-[18px]',
       thumb: 'w-3.5 h-3.5',
       translateX: 14,
     },
@@ -53,10 +53,9 @@ export const Toggle: React.FC<ToggleProps> = ({
     <div
       className={cn(
         'inline-flex items-center gap-2.5 select-none',
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+        disabled ? 'opacity-50 cursor-not-allowed' : '',
         className
       )}
-      onClick={handleToggle}
     >
       <button
         type="button"
@@ -92,7 +91,10 @@ export const Toggle: React.FC<ToggleProps> = ({
       </button>
 
       {(label || description) && (
-        <div className="flex flex-col text-left">
+        <div
+          className={cn('flex flex-col text-left select-none', disabled ? 'cursor-not-allowed' : 'cursor-pointer')}
+          onClick={handleToggle}
+        >
           {label && (
             <span
               className={cn(

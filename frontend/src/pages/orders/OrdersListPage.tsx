@@ -102,16 +102,6 @@ export const OrdersListPage: React.FC = () => {
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => {
-              setSelectedOrderId(o.id);
-              setIsInvoiceOpen(true);
-            }}
-            className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-            title="Tax Invoice"
-          >
-            <FileText className="w-3.5 h-3.5" />
-          </button>
           {['DRAFT', 'PENDING_APPROVAL'].includes(o.status) && (
             <button
               onClick={() => setCancellingOrder(o)}
@@ -223,17 +213,26 @@ export const OrdersListPage: React.FC = () => {
             </div>
 
             {/* Quick Actions Strip */}
-            <div className="flex items-center justify-between p-3 rounded-card bg-surfaceAlt/50 border border-border">
-              <span className="text-caption text-textMuted font-medium">Official Tax Documentation</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsInvoiceOpen(true)}
-                leftIcon={<Printer className="w-3.5 h-3.5" />}
-              >
-                Print / View Invoice
-              </Button>
-            </div>
+            {orderDetail.status === 'COMPLETED' ? (
+              <div className="flex items-center justify-between p-3 rounded-card bg-surfaceAlt/50 border border-border">
+                <span className="text-caption text-textMuted font-medium">Official Tax Documentation</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsInvoiceOpen(true)}
+                  leftIcon={<Printer className="w-3.5 h-3.5" />}
+                >
+                  Print / View Invoice
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-3 rounded-card bg-surfaceAlt/30 border border-border/50 text-xs text-muted">
+                <span>Tax invoice is generated upon order completion.</span>
+                <span className="font-mono uppercase px-2 py-0.5 rounded bg-surface border border-border text-[10px]">
+                  {orderDetail.status.replace('_', ' ')}
+                </span>
+              </div>
+            )}
 
             {/* Customer Details */}
             <div>

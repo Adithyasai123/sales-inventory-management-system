@@ -8,8 +8,9 @@ import {
   Tooltip,
 } from 'recharts';
 import { TopCustomer } from '../../types/dashboard';
-import { formatCurrency, formatCompactCurrency } from '../../lib/utils';
+import { formatCurrency, formatCompactCurrency, cn } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
+import { Skeleton } from '../ui/Skeleton';
 import { useThemeColors } from '../../theme/ThemeProvider';
 
 interface TopCustomersChartProps {
@@ -40,6 +41,19 @@ export const TopCustomersChart: React.FC<TopCustomersChartProps> = ({
       title="Top Customers by Revenue"
       subtitle="Highest revenue generated across orders"
       isLoading={isLoading}
+      loadingSkeleton={
+        <div className="flex-1 flex flex-col justify-around py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={`cust-bar-skel-${i}`} className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-14" />
+              </div>
+              <Skeleton className={cn('h-2.5 rounded-full', ['w-[90%]', 'w-[75%]', 'w-[60%]', 'w-[45%]', 'w-[30%]'][i])} />
+            </div>
+          ))}
+        </div>
+      }
       isError={isError}
       onRetry={onRetry}
       isEmpty={isEmpty}

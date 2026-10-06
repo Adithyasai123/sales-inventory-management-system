@@ -33,6 +33,10 @@ export const CustomersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [confirmStatusCustomer, setConfirmStatusCustomer] = useState<{
+    customer: Customer;
+    newStatus: boolean;
+  } | null>(null);
 
   const [formData, setFormData] = useState<CustomerInput>({
     name: '',
@@ -134,10 +138,10 @@ export const CustomersPage: React.FC = () => {
             size="sm"
             checked={c.is_active}
             disabled={updateCustomerMutation.isPending}
-            onChange={async (newChecked) => {
-              await updateCustomerMutation.mutateAsync({
-                id: c.id,
-                payload: { is_active: newChecked } as any,
+            onChange={() => {
+              setConfirmStatusCustomer({
+                customer: c,
+                newStatus: !c.is_active,
               });
             }}
           />
@@ -146,12 +150,12 @@ export const CustomersPage: React.FC = () => {
               'text-[11px] font-medium transition-colors select-none cursor-pointer hover:underline',
               c.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'
             )}
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation();
               if (!updateCustomerMutation.isPending) {
-                await updateCustomerMutation.mutateAsync({
-                  id: c.id,
-                  payload: { is_active: !c.is_active } as any,
+                setConfirmStatusCustomer({
+                  customer: c,
+                  newStatus: !c.is_active,
                 });
               }
             }}
@@ -328,6 +332,30 @@ export const CustomersPage: React.FC = () => {
         confirmLabel="Deactivate"
         variant="danger"
         isLoading={deleteCustomerMutation.isPending}
+      />
+
+      {/* Status Toggle Confirmation */}
+      <ConfirmDialog
+        isOpen={!!confirmStatusCustomer}
+        onClose={() => setConfirmStatusCustomer(null)}
+        onConfirm={async () => {
+          if (confirmStatusCustomer) {
+            await updateCustomerMutation.mutateAsync({
+              id: confirmStatusCustomer.customer.id,
+              payload: { is_active: confirmStatusCustomer.newStatus } as any,
+            });
+            setConfirmStatusCustomer(null);
+          }
+        }}
+        title={confirmStatusCustomer?.newStatus ? 'Activate Customer' : 'Deactivate Customer'}
+        description={
+          confirmStatusCustomer?.newStatus
+            ? `Are you sure you want to activate customer "${confirmStatusCustomer?.customer.name}"? They will be available for new sales orders.`
+            : `Are you sure you want to deactivate customer "${confirmStatusCustomer?.customer.name}"? Inactive customers cannot be selected when creating new orders.`
+        }
+        confirmLabel={confirmStatusCustomer?.newStatus ? 'Activate Customer' : 'Deactivate Customer'}
+        variant={confirmStatusCustomer?.newStatus ? 'primary' : 'danger'}
+        isLoading={updateCustomerMutation.isPending}
       />
     </div>
   );

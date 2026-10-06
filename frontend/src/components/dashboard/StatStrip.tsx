@@ -129,17 +129,21 @@ export const StatStrip: React.FC<StatStripProps> = ({
               </div>
             )}
 
-            <div className="flex items-center gap-1">
-              {renderDelta(tile.delta, tile.isRevenue)}
-              <span
-                className={cn(
-                  'text-[10px] leading-none truncate',
-                  tile.isRevenue ? 'text-primaryText' : 'text-muted'
-                )}
-              >
-                vs prev {rangeDays}d
-              </span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-2.5 w-16 mt-1" />
+            ) : (
+              <div className="flex items-center gap-1">
+                {renderDelta(tile.delta, tile.isRevenue)}
+                <span
+                  className={cn(
+                    'text-[10px] leading-none truncate',
+                    tile.isRevenue ? 'text-primaryText' : 'text-muted'
+                  )}
+                >
+                  vs prev {rangeDays}d
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right 40px sparkline */}

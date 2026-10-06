@@ -11,6 +11,7 @@ interface DashboardCardProps {
   className?: string;
   contentClassName?: string;
   isLoading?: boolean;
+  loadingSkeleton?: React.ReactNode;
   isError?: boolean;
   onRetry?: () => void;
   isEmpty?: boolean;
@@ -29,6 +30,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   className,
   contentClassName,
   isLoading = false,
+  loadingSkeleton,
   isError = false,
   onRetry,
   isEmpty = false,
@@ -86,14 +88,24 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
         )}
       >
         {isLoading ? (
-          <div className="flex-1 flex flex-col justify-center gap-3 py-4">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-28 w-full" />
-            <div className="flex gap-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-4 w-1/3" />
+          loadingSkeleton || (
+            <div className="flex-1 flex flex-col justify-between py-2">
+              <div className="flex items-end justify-between gap-3 h-32 px-1 pt-2">
+                <Skeleton className="w-full h-[45%] rounded-t-md" />
+                <Skeleton className="w-full h-[70%] rounded-t-md" />
+                <Skeleton className="w-full h-[55%] rounded-t-md" />
+                <Skeleton className="w-full h-[85%] rounded-t-md" />
+                <Skeleton className="w-full h-[60%] rounded-t-md" />
+                <Skeleton className="w-full h-[95%] rounded-t-md" />
+                <Skeleton className="w-full h-[50%] rounded-t-md" />
+              </div>
+              <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-16" />
+              </div>
             </div>
-          </div>
+          )
         ) : isError ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-3">
             <Illustration name="state-connection-error" size={84} wrapTile={false} alt="Connection error" />

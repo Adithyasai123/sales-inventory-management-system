@@ -317,3 +317,10 @@ select:-webkit-autofill {
   -webkit-text-fill-color: #F4F4F5 !important;
   caret-color: #F4F4F5 !important;
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+

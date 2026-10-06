@@ -4,6 +4,7 @@ import { SalesOrder } from '../../types/order';
 import { StatusBadge } from '../ui/StatusBadge';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { DashboardCard } from './DashboardCard';
+import { Skeleton } from '../ui/Skeleton';
 import { ArrowUpRight, Eye } from 'lucide-react';
 
 interface RecentOrdersTableProps {
@@ -25,11 +26,11 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
     <DashboardCard
       title="Recent Orders"
       subtitle="Latest sales orders processed across teams"
-      isLoading={isLoading}
+      isLoading={false}
       isError={isError}
       onRetry={onRetry}
       fixedHeight={false}
-      isEmpty={orders.length === 0}
+      isEmpty={!isLoading && orders.length === 0}
       emptyMessage="No data for this range"
       action={
         <Link
@@ -54,7 +55,18 @@ export const RecentOrdersTable: React.FC<RecentOrdersTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
-            {orders.slice(0, 6).map((order) => (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={`recent-skel-${i}`}>
+                  <td className="px-4 py-3"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-3.5 w-28" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-4 py-3 text-right"><Skeleton className="h-3.5 w-16 ml-auto" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-20 rounded-full" /></td>
+                  <td className="px-4 py-3 text-right"><Skeleton className="h-6 w-6 rounded-full ml-auto" /></td>
+                </tr>
+              ))
+            ) : orders.slice(0, 6).map((order) => (
               <tr
                 key={order.id}
                 className="hover:bg-surfaceAlt/40 transition-colors"
