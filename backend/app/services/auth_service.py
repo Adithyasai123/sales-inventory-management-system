@@ -20,7 +20,8 @@ class AuthService:
         if not user.is_active:
             raise UnauthorizedException("User account is inactive. Please contact your administrator.")
 
-        access_token = create_access_token(subject=user.id, role=user.role.value)
+        role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+        access_token = create_access_token(subject=user.id, role=role_str)
         refresh_token = create_refresh_token(subject=user.id)
 
         return TokenResponse(
@@ -43,7 +44,8 @@ class AuthService:
         if not user or not user.is_active:
             raise UnauthorizedException("User no longer exists or is inactive")
 
-        new_access_token = create_access_token(subject=user.id, role=user.role.value)
+        role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+        new_access_token = create_access_token(subject=user.id, role=role_str)
         new_refresh_token = create_refresh_token(subject=user.id)
 
         return TokenResponse(

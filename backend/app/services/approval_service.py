@@ -91,9 +91,10 @@ class ApprovalService:
                         available=available,
                     )
 
-            # Deduct stock atomically and write to inventory_movements ledger
+            # Deduct stock atomically, release reservation, and write to inventory_movements ledger
             for item in order.items:
                 product = locked_map[item.product_id]
+                new_reserved = max(0, (product.reserved_quantity or 0) - item.quantity)
                 affected = (
                     self.db.query(Product)
                     .filter(
@@ -102,7 +103,10 @@ class ApprovalService:
                         Product.is_deleted == False,
                     )
                     .update(
-                        {Product.stock_quantity: Product.stock_quantity - item.quantity},
+                        {
+                            Product.stock_quantity: Product.stock_quantity - item.quantity,
+                            Product.reserved_quantity: new_reserved,
+                        },
                         synchronize_session="fetch",
                     )
                 )
@@ -132,6 +136,15 @@ class ApprovalService:
             order.status = OrderStatus.COMPLETED
 
         elif action.decision == ApprovalDecision.REJECTED:
+            # Release reserved stock on rejection
+            product_ids = [item.product_id for item in order.items]
+            locked_products = self.product_repo.get_for_update(product_ids)
+            locked_map = {p.id: p for p in locked_products}
+            for item in order.items:
+                product = locked_map.get(item.product_id)
+                if product:
+                    product.reserved_quantity = max(0, product.reserved_quantity - item.quantity)
+
             order.status = OrderStatus.REJECTED
 
         # 7. Record approval audit trail

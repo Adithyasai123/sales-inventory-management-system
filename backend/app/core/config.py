@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     EMAILS_FROM_NAME: str = "SIMS Notifications"
 
     # Default Business Rules
-    DEFAULT_APPROVAL_THRESHOLD: Decimal = Decimal("1000.00")
+    DEFAULT_APPROVAL_THRESHOLD: Decimal = Decimal("75000.00")
     CURRENCY_CODE: str = "INR"
     CURRENCY_LOCALE: str = "en-IN"
 

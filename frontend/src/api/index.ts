@@ -1,6 +1,6 @@
 import { apiClient } from '../lib/axios';
 import { PaginatedResponse, MessageResponse } from '../types';
-import { User, Tokens, LoginPayload } from '../types/auth';
+import { User, Tokens, LoginPayload, Role, RoleCreatePayload, RoleUpdatePayload } from '../types/auth';
 import { Customer, CustomerInput } from '../types/customer';
 import { Product, ProductInput, StockAdjustPayload } from '../types/product';
 import { SalesOrder, OrderDetail, CreateOrderPayload, OrderStatus } from '../types/order';
@@ -53,8 +53,31 @@ export const usersApi = {
   },
 };
 
+export const rolesApi = {
+  list: async (params?: { search?: string }): Promise<Role[]> => {
+    const { data } = await apiClient.get<Role[]>('/roles', { params });
+    return data;
+  },
+  get: async (id: number): Promise<Role> => {
+    const { data } = await apiClient.get<Role>(`/roles/${id}`);
+    return data;
+  },
+  create: async (payload: RoleCreatePayload): Promise<Role> => {
+    const { data } = await apiClient.post<Role>('/roles', payload);
+    return data;
+  },
+  update: async (id: number, payload: RoleUpdatePayload): Promise<Role> => {
+    const { data } = await apiClient.put<Role>(`/roles/${id}`, payload);
+    return data;
+  },
+  delete: async (id: number): Promise<MessageResponse> => {
+    const { data } = await apiClient.delete<MessageResponse>(`/roles/${id}`);
+    return data;
+  },
+};
+
 export const customersApi = {
-  list: async (params?: { page?: number; page_size?: number; search?: string; is_active?: boolean; sort_by?: string; sort_order?: string }): Promise<PaginatedResponse<Customer>> => {
+  list: async (params?: { page?: number; page_size?: number; search?: string; is_active?: boolean; include_deleted?: boolean; sort_by?: string; sort_order?: string }): Promise<PaginatedResponse<Customer>> => {
     const { data } = await apiClient.get<PaginatedResponse<Customer>>('/customers', { params });
     return data;
   },
@@ -74,10 +97,14 @@ export const customersApi = {
     const { data } = await apiClient.delete<MessageResponse>(`/customers/${id}`);
     return data;
   },
+  restore: async (id: number): Promise<Customer> => {
+    const { data } = await apiClient.post<Customer>(`/customers/${id}/restore`);
+    return data;
+  },
 };
 
 export const productsApi = {
-  list: async (params?: { page?: number; page_size?: number; search?: string; category?: string; is_low_stock?: boolean; is_active?: boolean; sort_by?: string; sort_order?: string }): Promise<PaginatedResponse<Product>> => {
+  list: async (params?: { page?: number; page_size?: number; search?: string; category?: string; is_low_stock?: boolean; is_active?: boolean; include_deleted?: boolean; sort_by?: string; sort_order?: string }): Promise<PaginatedResponse<Product>> => {
     const { data } = await apiClient.get<PaginatedResponse<Product>>('/products', { params });
     return data;
   },
@@ -95,6 +122,10 @@ export const productsApi = {
   },
   delete: async (id: number): Promise<MessageResponse> => {
     const { data } = await apiClient.delete<MessageResponse>(`/products/${id}`);
+    return data;
+  },
+  restore: async (id: number): Promise<Product> => {
+    const { data } = await apiClient.post<Product>(`/products/${id}/restore`);
     return data;
   },
   adjustStock: async (id: number, payload: StockAdjustPayload): Promise<Product> => {

@@ -15,6 +15,7 @@ from app.main import app
 from app.core.database import Base, get_db
 from app.core.security import get_password_hash, create_access_token
 from app.models.user import User, UserRole
+from app.models.role import Role
 from app.models.customer import Customer
 from app.models.product import Product
 from app.models.setting import SystemSetting
@@ -79,29 +80,57 @@ def seed_data(db_session: Session):
     # Settings
     db_session.add(SystemSetting(key="approval_threshold", value="1000.00", description="Threshold"))
 
+    # Roles
+    r_admin = Role(name="ADMIN", display_name="Admin", is_system=True, allowed_screens="dashboard,orders,products,customers,inventory,approvals,settings,users,audit", can_create_orders=True, can_approve_orders=True, can_adjust_stock=True)
+    r_mgr = Role(name="MANAGER", display_name="Manager", is_system=True, allowed_screens="dashboard,orders,products,customers,inventory,approvals,settings,users,audit", can_create_orders=True, can_approve_orders=True, can_adjust_stock=True)
+    r_sales = Role(name="SALES", display_name="Sales", is_system=True, allowed_screens="dashboard,orders,products,customers,inventory", can_create_orders=True)
+    r_wh = Role(name="WAREHOUSE", display_name="Warehouse", is_system=True, allowed_screens="dashboard,orders,products,inventory", can_adjust_stock=True)
+    r_fin = Role(name="FINANCE", display_name="Finance", is_system=True, allowed_screens="dashboard,orders,customers,inventory,audit", can_view_audit=True)
+    db_session.add_all([r_admin, r_mgr, r_sales, r_wh, r_fin])
+    db_session.flush()
+
     # Users
     admin_user = User(
         email="admin@test.com",
         full_name="Test Admin",
         hashed_password=get_password_hash("Password123!"),
-        role=UserRole.ADMIN,
+        role="ADMIN",
+        role_id=r_admin.id,
         is_active=True,
     )
     manager_user = User(
         email="manager@test.com",
         full_name="Test Manager",
         hashed_password=get_password_hash("Password123!"),
-        role=UserRole.MANAGER,
+        role="MANAGER",
+        role_id=r_mgr.id,
         is_active=True,
     )
     sales_user = User(
         email="sales@test.com",
         full_name="Test Sales",
         hashed_password=get_password_hash("Password123!"),
-        role=UserRole.SALES,
+        role="SALES",
+        role_id=r_sales.id,
         is_active=True,
     )
-    db_session.add_all([admin_user, manager_user, sales_user])
+    warehouse_user = User(
+        email="warehouse@test.com",
+        full_name="Test Warehouse",
+        hashed_password=get_password_hash("Password123!"),
+        role="WAREHOUSE",
+        role_id=r_wh.id,
+        is_active=True,
+    )
+    finance_user = User(
+        email="finance@test.com",
+        full_name="Test Finance",
+        hashed_password=get_password_hash("Password123!"),
+        role="FINANCE",
+        role_id=r_fin.id,
+        is_active=True,
+    )
+    db_session.add_all([admin_user, manager_user, sales_user, warehouse_user, finance_user])
     db_session.flush()
 
     # Customer
@@ -147,6 +176,8 @@ def seed_data(db_session: Session):
         "admin": admin_user,
         "manager": manager_user,
         "sales": sales_user,
+        "warehouse": warehouse_user,
+        "finance": finance_user,
         "customer": customer,
         "prod1": prod1,
         "prod2": prod2,
@@ -169,4 +200,16 @@ def manager_headers(seed_data) -> dict:
 @pytest.fixture
 def sales_headers(seed_data) -> dict:
     token = create_access_token(subject=seed_data["sales"].id, role=UserRole.SALES.value)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def warehouse_headers(seed_data) -> dict:
+    token = create_access_token(subject=seed_data["warehouse"].id, role=UserRole.WAREHOUSE.value)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def finance_headers(seed_data) -> dict:
+    token = create_access_token(subject=seed_data["finance"].id, role=UserRole.FINANCE.value)
     return {"Authorization": f"Bearer {token}"}

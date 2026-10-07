@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 from app.models.user import UserRole
 
@@ -34,7 +34,8 @@ class UserMeResponse(BaseModel):
     id: int
     email: str
     full_name: str
-    role: UserRole
+    role: Union[UserRole, str]
+    role_id: Optional[int] = None
     is_active: bool
     is_super_admin: bool = False
     manager_id: Optional[int] = None

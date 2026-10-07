@@ -60,7 +60,9 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: notifications@sims.local
       EMAILS_FROM_NAME: SIMS Notifications
-      DEFAULT_APPROVAL_THRESHOLD: "1000.00"
+      DEFAULT_APPROVAL_THRESHOLD: "75000.00"
+      CURRENCY_CODE: "INR"
+      CURRENCY_LOCALE: "en-IN"
       BACKEND_CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:80
     ports:
       - "8000:8000"

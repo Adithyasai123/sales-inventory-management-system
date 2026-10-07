@@ -1,5 +1,5 @@
 import time
-from typing import List, Callable, Dict, Optional
+from typing import List, Callable, Dict, Optional, Union
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -40,13 +40,24 @@ def get_current_user(
     return user
 
 
-def require_role(*allowed_roles: UserRole) -> Callable[[User], User]:
+def require_role(*allowed_roles: Union[UserRole, str]) -> Callable[[User], User]:
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in allowed_roles:
-            role_names = ", ".join(r.value for r in allowed_roles)
+        allowed_str = [r.value if hasattr(r, "value") else str(r) for r in allowed_roles]
+        user_role_str = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+        if user_role_str not in allowed_str:
+            role_names = ", ".join(allowed_str)
             raise PermissionDeniedException(required_role=role_names)
         return current_user
     return role_checker
+
+
+def require_permission(permission_name: str) -> Callable[[User], User]:
+    """Enforce a dynamic database capability permission (e.g. can_adjust_stock, can_view_audit)."""
+    def perm_checker(current_user: User = Depends(get_current_user)) -> User:
+        if not current_user.has_permission(permission_name):
+            raise PermissionDeniedException(f"Missing required permission: {permission_name}")
+        return current_user
+    return perm_checker
 
 
 # In-memory sliding window rate limiter for login attempts

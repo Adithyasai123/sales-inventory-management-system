@@ -4,6 +4,7 @@ import {
   useCreateCustomer,
   useUpdateCustomer,
   useDeleteCustomer,
+  useRestoreCustomer,
 } from '../../hooks/useCustomers';
 import { Customer, CustomerInput } from '../../types/customer';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -12,22 +13,25 @@ import { Button } from '../../components/ui/Button';
 import { FormField, Input } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Toggle } from '../../components/ui/Toggle';
-import { Plus, Edit3, Trash2, Mail, Phone, Building } from 'lucide-react';
+import { Plus, Edit3, Trash2, Mail, Phone, Building, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const CustomersPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   const { data, isLoading } = useCustomers({
     page,
     page_size: 15,
     search: search || undefined,
+    include_deleted: includeDeleted,
   });
 
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
   const deleteCustomerMutation = useDeleteCustomer();
+  const restoreCustomerMutation = useRestoreCustomer();
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,7 +100,14 @@ export const CustomersPage: React.FC = () => {
       width: '280px',
       render: (c) => (
         <div>
-          <span className="text-body block">{c.name}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-body block">{c.name}</span>
+            {c.is_deleted && (
+              <span className="text-[10px] uppercase font-semibold px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                Archived
+              </span>
+            )}
+          </div>
           {c.company && (
             <span className="text-caption flex items-center gap-1 mt-0.5">
               <Building className="w-3 h-3 text-muted/70" /> {c.company}
@@ -140,9 +151,10 @@ export const CustomersPage: React.FC = () => {
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <Toggle
             size="sm"
-            checked={c.is_active}
-            disabled={updateCustomerMutation.isPending}
+            checked={c.is_active && !c.is_deleted}
+            disabled={c.is_deleted || updateCustomerMutation.isPending}
             onChange={() => {
+              if (c.is_deleted) return;
               setConfirmStatusCustomer({
                 customer: c,
                 newStatus: !c.is_active,
@@ -151,12 +163,15 @@ export const CustomersPage: React.FC = () => {
           />
           <span
             className={cn(
-              'text-[11px] font-medium transition-colors select-none cursor-pointer hover:underline',
-              c.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'
+              'text-[11px] font-medium transition-colors select-none',
+              c.is_deleted
+                ? 'text-muted cursor-not-allowed'
+                : 'cursor-pointer hover:underline',
+              c.is_active && !c.is_deleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted'
             )}
             onClick={(e) => {
               e.stopPropagation();
-              if (!updateCustomerMutation.isPending) {
+              if (!c.is_deleted && !updateCustomerMutation.isPending) {
                 setConfirmStatusCustomer({
                   customer: c,
                   newStatus: !c.is_active,
@@ -164,7 +179,7 @@ export const CustomersPage: React.FC = () => {
               }
             }}
           >
-            {c.is_active ? 'Active' : 'Inactive'}
+            {c.is_deleted ? 'Archived' : c.is_active ? 'Active' : 'Inactive'}
           </span>
         </div>
       ),
@@ -172,23 +187,38 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
-      width: '100px',
+      width: '120px',
       render: (c) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => handleOpenEdit(c)}
-            className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-            title="Edit Customer"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeletingCustomer(c)}
-            className="p-1.5 rounded-full hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
-            title="Delete Customer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {c.is_deleted ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => restoreCustomerMutation.mutate(c.id)}
+              isLoading={restoreCustomerMutation.isPending}
+              leftIcon={<RotateCcw className="w-3 h-3" />}
+              className="text-xs h-7 px-2"
+            >
+              Restore
+            </Button>
+          ) : (
+            <>
+              <button
+                onClick={() => handleOpenEdit(c)}
+                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+                title="Edit Customer"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setDeletingCustomer(c)}
+                className="p-1.5 rounded-full hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
+                title="Delete Customer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
         </div>
       ),
     },
@@ -226,6 +256,21 @@ export const CustomersPage: React.FC = () => {
           setSearch(val);
           setPage(1);
         }}
+        filters={
+          <button
+            onClick={() => {
+              setIncludeDeleted(!includeDeleted);
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-full text-caption border transition-colors ${
+              includeDeleted
+                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
+            }`}
+          >
+            {includeDeleted ? 'Showing Archived' : 'Show Archived'}
+          </button>
+        }
       />
 
       {/* Create / Edit Customer Modal */}

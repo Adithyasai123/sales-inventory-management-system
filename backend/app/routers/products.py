@@ -23,6 +23,14 @@ from app.schemas.common import PaginatedResponse, MessageResponse
 router = APIRouter(prefix="/products", tags=["Products"])
 
 
+def _map_product_response(item: Product) -> ProductResponse:
+    p_resp = ProductResponse.model_validate(item)
+    p_resp.reserved_quantity = getattr(item, "reserved_quantity", 0) or 0
+    p_resp.available_stock = max(0, item.stock_quantity - p_resp.reserved_quantity)
+    p_resp.is_low_stock = p_resp.available_stock <= item.reorder_level
+    return p_resp
+
+
 @router.get("", response_model=PaginatedResponse[ProductResponse])
 def list_products(
     page: int = Query(1, ge=1),
@@ -53,15 +61,8 @@ def list_products(
     )
     total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-    # Annotate is_low_stock on responses
-    response_items = []
-    for item in items:
-        p_resp = ProductResponse.model_validate(item)
-        p_resp.is_low_stock = item.stock_quantity <= item.reorder_level
-        response_items.append(p_resp)
-
     return PaginatedResponse(
-        items=response_items,
+        items=[_map_product_response(item) for item in items],
         total=total,
         page=page,
         page_size=page_size,
@@ -90,6 +91,7 @@ def create_product(
         price=payload.price,
         cost_price=payload.cost_price,
         stock_quantity=payload.stock_quantity,
+        reserved_quantity=0,
         reorder_level=payload.reorder_level,
         is_active=True,
     )
@@ -108,9 +110,7 @@ def create_product(
     db.commit()
     db.refresh(product)
     
-    resp = ProductResponse.model_validate(product)
-    resp.is_low_stock = product.stock_quantity <= product.reorder_level
-    return resp
+    return _map_product_response(product)
 
 
 @router.get("/export/csv")
@@ -186,9 +186,7 @@ def get_product(
     if not product:
         raise EntityNotFoundException("Product", id)
     
-    resp = ProductResponse.model_validate(product)
-    resp.is_low_stock = product.stock_quantity <= product.reorder_level
-    return resp
+    return _map_product_response(product)
 
 
 @router.put("/{id}", response_model=ProductResponse)
@@ -227,9 +225,7 @@ def update_product(
     db.commit()
     db.refresh(product)
 
-    resp = ProductResponse.model_validate(product)
-    resp.is_low_stock = product.stock_quantity <= product.reorder_level
-    return resp
+    return _map_product_response(product)
 
 
 @router.delete("/{id}", response_model=MessageResponse)
@@ -264,9 +260,7 @@ def restore_product(
     repo.restore(product)
     db.commit()
     db.refresh(product)
-    resp = ProductResponse.model_validate(product)
-    resp.is_low_stock = product.stock_quantity <= product.reorder_level
-    return resp
+    return _map_product_response(product)
 
 
 @router.post("/{id}/adjust-stock", response_model=ProductResponse)
@@ -274,11 +268,9 @@ def adjust_product_stock(
     id: int,
     payload: StockAdjustRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER, UserRole.WAREHOUSE)),
 ):
     """Manually adjust product stock levels with mandatory reason audit."""
     service = InventoryService(db)
     product = service.adjust_stock(id, payload)
-    resp = ProductResponse.model_validate(product)
-    resp.is_low_stock = product.stock_quantity <= product.reorder_level
-    return resp
+    return _map_product_response(product)

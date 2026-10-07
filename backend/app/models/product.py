@@ -15,12 +15,18 @@ class Product(Base, TimestampMixin, SoftDeleteMixin):
     price = Column(Numeric(12, 2), nullable=False)
     cost_price = Column(Numeric(12, 2), nullable=True)
     stock_quantity = Column(Integer, default=0, nullable=False)
+    reserved_quantity = Column(Integer, default=0, nullable=False)
     reorder_level = Column(Integer, default=10, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
     __table_args__ = (
         CheckConstraint("stock_quantity >= 0", name="chk_stock_non_negative"),
+        CheckConstraint("reserved_quantity >= 0", name="chk_reserved_non_negative"),
     )
+
+    @property
+    def available_quantity(self) -> int:
+        return max(0, self.stock_quantity - self.reserved_quantity)
 
     # Relationships
     order_items = relationship("SalesOrderItem", back_populates="product")

@@ -7,8 +7,11 @@ export interface Product {
   price: string | number;
   cost_price?: string | number;
   stock_quantity: number;
+  reserved_quantity?: number;
+  available_stock?: number;
   reorder_level: number;
   is_active: boolean;
+  is_deleted?: boolean;
   is_low_stock?: boolean;
   created_at: string;
   updated_at: string;

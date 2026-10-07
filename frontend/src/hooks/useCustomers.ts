@@ -9,6 +9,7 @@ export function useCustomers(params?: {
   page_size?: number;
   search?: string;
   is_active?: boolean;
+  include_deleted?: boolean;
   sort_by?: string;
   sort_order?: string;
 }) {
@@ -66,6 +67,21 @@ export function useDeleteCustomer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast.success('Customer soft-deleted.');
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useRestoreCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => customersApi.restore(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success(`Customer "${data.name}" restored successfully.`);
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));

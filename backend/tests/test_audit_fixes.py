@@ -182,12 +182,12 @@ def test_approvals_opposite_order_lock_ordering_and_insufficient_stock(
     client: TestClient, sales_headers, manager_headers, seed_data
 ):
     """Two orders listing the same products in opposite order.
-    Pessimistic locking sorts IDs ascending, and stock check rejects the second order with 409."""
+    Order 1 reserves stock; Order 2 attempting to claim already-reserved stock is rejected with 409."""
     p1 = seed_data["prod1"]  # stock 50
     p2 = seed_data["prod2"]  # stock 10
     customer = seed_data["customer"]
 
-    # Order 1: items [p1 (qty 40), p2 (qty 8)]
+    # Order 1: items [p1 (qty 40), p2 (qty 8)] -> reserves 8 units of p2 (available = 2)
     res1 = client.post(
         "/api/v1/orders",
         json={
@@ -203,7 +203,7 @@ def test_approvals_opposite_order_lock_ordering_and_insufficient_stock(
     assert res1.status_code == 201
     order1_id = res1.json()["id"]
 
-    # Order 2: items in reverse order [p2 (qty 8), p1 (qty 40)]
+    # Order 2: items in reverse order [p2 (qty 8), p1 (qty 40)] -> rejected with 409 because only 2 units available
     res2 = client.post(
         "/api/v1/orders",
         json={
@@ -216,8 +216,8 @@ def test_approvals_opposite_order_lock_ordering_and_insufficient_stock(
         },
         headers=sales_headers,
     )
-    assert res2.status_code == 201
-    order2_id = res2.json()["id"]
+    assert res2.status_code == 409
+    assert res2.json()["code"] == "INSUFFICIENT_STOCK"
 
     # Approve Order 1 -> succeeds
     appr1 = client.post(
@@ -227,15 +227,6 @@ def test_approvals_opposite_order_lock_ordering_and_insufficient_stock(
     )
     assert appr1.status_code == 200
     assert appr1.json()["status"] == "COMPLETED"
-
-    # Approve Order 2 -> fails with 409 Insufficient Stock
-    appr2 = client.post(
-        f"/api/v1/approvals/{order2_id}/action",
-        json={"decision": "APPROVED", "comment": "Order 2 Approved"},
-        headers=manager_headers,
-    )
-    assert appr2.status_code == 409
-    assert appr2.json()["code"] == "INSUFFICIENT_STOCK"
 
 
 def test_order_number_sequence_generation_twenty_orders(client: TestClient, sales_headers, seed_data):

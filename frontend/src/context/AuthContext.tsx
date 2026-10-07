@@ -11,6 +11,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isManager: boolean;
   isSales: boolean;
+  isWarehouse: boolean;
+  isFinance: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => void;
 }
@@ -75,6 +77,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAdmin = user?.role === 'ADMIN' || isSuperAdmin;
   const isManager = user?.role === 'MANAGER' || isSuperAdmin;
   const isSales = user?.role === 'SALES';
+  const isWarehouse = user?.role === 'WAREHOUSE';
+  const isFinance = user?.role === 'FINANCE';
 
   return (
     <AuthContext.Provider
@@ -86,6 +90,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAdmin,
         isManager,
         isSales,
+        isWarehouse,
+        isFinance,
         login,
         logout,
       }}

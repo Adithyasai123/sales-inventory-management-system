@@ -1,3 +1,4 @@
+import os
 import smtplib
 import time
 from datetime import datetime, timezone
@@ -5,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List, Optional, Tuple
 from decimal import Decimal
+from jinja2 import Environment, FileSystemLoader
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -15,6 +17,9 @@ from app.models.user import User, UserRole
 
 MAX_RETRIES = 3
 RETRY_BACKOFF = [1, 2, 4]  # seconds between retries
+
+TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates", "emails")
+jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
 
 
 class EmailService:
@@ -105,37 +110,22 @@ class EmailService:
         )
 
         subject = f"[Action Required] Order {order_number} Requires Manager Approval"
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family: Arial, sans-serif; background-color: #E9F6F0; padding: 24px; color: #0F2E2A;">
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #CFE7DC; padding: 32px;">
-                <h2 style="color: #0F2E2A; margin-top: 0;">Sales Order Approval Required</h2>
-                <p>Hello Manager,</p>
-                <p>A new high-value sales order has been created that exceeds the required threshold and awaits your approval:</p>
-                
-                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: #F1FAF6; border-radius: 12px; padding: 16px;">
-                    <tr><td style="padding: 8px; font-weight: bold;">Order Number:</td><td style="padding: 8px; font-family: monospace;">{order_number}</td></tr>
-                    <tr><td style="padding: 8px; font-weight: bold;">Customer:</td><td style="padding: 8px;">{customer_name}</td></tr>
-                    <tr><td style="padding: 8px; font-weight: bold;">Created By:</td><td style="padding: 8px;">{creator_name}</td></tr>
-                    <tr><td style="padding: 8px; font-weight: bold;">Total Amount:</td><td style="padding: 8px; font-weight: bold; color: #0F3D33;">${total_amount:,.2f}</td></tr>
-                </table>
+        formatted_amount = f"₹{total_amount:,.2f}"
 
-                <p>Please log in to the <strong>Sales &amp; Inventory Management System</strong> to inspect line items and submit your approval or rejection decision.</p>
-                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #CFE7DC; font-size: 12px; color: #5B7A73;">
-                    This is an automated system notification from SIMS.
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        template = jinja_env.get_template("approval_request.html")
+        html_content = template.render(
+            order_number=order_number,
+            customer_name=customer_name,
+            creator_name=creator_name,
+            formatted_amount=formatted_amount,
+        )
 
         results: List[Tuple[int, str, str, str]] = []
         for manager in managers:
             log = EmailLog(
                 recipient=manager.email,
                 subject=subject,
-                body_preview=f"Order {order_number} (${total_amount:,.2f}) created by {creator_name} requires approval.",
+                body_preview=f"Order {order_number} ({formatted_amount}) created by {creator_name} requires approval.",
                 status=EmailStatus.PENDING,
             )
             db.add(log)
@@ -162,30 +152,17 @@ class EmailService:
         """
         subject = f"[Order Update] Your Order {order_number} has been {decision}"
         decision_color = "#0F3D33" if decision == "APPROVED" else "#8A1C14"
+        formatted_amount = f"₹{total_amount:,.2f}"
 
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family: Arial, sans-serif; background-color: #E9F6F0; padding: 24px; color: #0F2E2A;">
-            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #CFE7DC; padding: 32px;">
-                <h2 style="color: #0F2E2A; margin-top: 0;">Order Status Update</h2>
-                <p>Hello {creator_name},</p>
-                <p>Your sales order <strong>{order_number}</strong> (${total_amount:,.2f}) has been reviewed by management:</p>
-                
-                <div style="background: #F1FAF6; border-left: 4px solid {decision_color}; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                    <p style="margin: 0; font-size: 16px;">Decision: <strong style="color: {decision_color};">{decision}</strong></p>
-                    <p style="margin: 8px 0 0 0; color: #5B7A73; font-style: italic;">Manager Comment: "{comment}"</p>
-                </div>
-
-                <p>{'The inventory has been deducted and the order is marked as COMPLETED.' if decision == 'APPROVED' else 'The order has been REJECTED and no inventory was altered.'}</p>
-
-                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #CFE7DC; font-size: 12px; color: #5B7A73;">
-                    This is an automated system notification from SIMS.
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        template = jinja_env.get_template("decision_notification.html")
+        html_content = template.render(
+            creator_name=creator_name,
+            order_number=order_number,
+            formatted_amount=formatted_amount,
+            decision=decision,
+            decision_color=decision_color,
+            comment=comment,
+        )
 
         log = EmailLog(
             recipient=creator_email,
@@ -196,6 +173,45 @@ class EmailService:
         db.add(log)
         db.flush()
         return (log.id, creator_email, subject, html_content)
+
+    @classmethod
+    def sweep_pending_emails(cls, db: Optional[Session] = None, limit: int = 50) -> int:
+        """Outbox Sweeper: Finds un-dispatched PENDING emails and retries them synchronously.
+        Provides at-least-once delivery guarantee across application restarts.
+        """
+        local_session = False
+        if db is None:
+            db = SessionLocal()
+            local_session = True
+
+        try:
+            pending_logs = (
+                db.query(EmailLog)
+                .filter(
+                    EmailLog.status.in_([EmailStatus.PENDING, EmailStatus.FAILED]),
+                    EmailLog.retries < MAX_RETRIES,
+                )
+                .order_by(EmailLog.id.asc())
+                .limit(limit)
+                .all()
+            )
+
+            dispatched_count = 0
+            for log in pending_logs:
+                # Dispatch if body preview exists
+                success = cls._send_smtp_email(
+                    to_email=log.recipient,
+                    subject=log.subject,
+                    html_body=f"<p>{log.body_preview}</p>",
+                    log_id=log.id,
+                )
+                if success:
+                    dispatched_count += 1
+
+            return dispatched_count
+        finally:
+            if local_session:
+                db.close()
 
     @classmethod
     def send_approval_request_to_managers(

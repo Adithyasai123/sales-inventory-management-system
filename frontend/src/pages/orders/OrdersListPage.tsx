@@ -11,11 +11,14 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { Plus, Eye, Ban, CheckCircle2, Clock, Download, FileText, Printer } from 'lucide-react';
 import { ordersApi } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { InvoiceModal } from '../../components/orders/InvoiceModal';
 import { OrderReviewDrawerSkeleton } from '../../components/orders/OrderReviewDrawerSkeleton';
 
 export const OrdersListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canCreateOrder = !['WAREHOUSE', 'FINANCE'].includes(user?.role || '');
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -140,14 +143,16 @@ export const OrdersListPage: React.FC = () => {
             >
               Export CSV
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate('/orders/create')}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Create Order
-            </Button>
+            {canCreateOrder && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate('/orders/create')}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Create Order
+              </Button>
+            )}
           </div>
         }
       />

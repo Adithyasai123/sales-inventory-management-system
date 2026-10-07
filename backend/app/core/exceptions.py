@@ -104,3 +104,13 @@ class ValidationException(AppException):
             details=details or {},
         )
 
+
+class BadRequestException(AppException):
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            message=message,
+            code="BAD_REQUEST",
+            status_code=400,
+            details=details or {},
+        )
+

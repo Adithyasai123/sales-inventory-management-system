@@ -11,7 +11,6 @@ export function useInventoryMovements(params?: {
   return useQuery({
     queryKey: ['inventory', 'movements', params],
     queryFn: () => inventoryApi.listMovements(params),
-    refetchInterval: 5000,
   });
 }
 
@@ -19,6 +18,5 @@ export function useLowStockAlerts() {
   return useQuery({
     queryKey: ['inventory', 'low-stock'],
     queryFn: () => inventoryApi.getLowStockAlerts(),
-    refetchInterval: 5000,
   });
 }
