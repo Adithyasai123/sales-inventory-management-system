@@ -2,6 +2,10 @@
 
 An enterprise-grade, full-stack web application designed for comprehensive catalog management, multi-line sales order creation, real-time inventory tracking, and transactional manager approval workflows.
 
+## Documentation
+
+Project documentation is organized in [`docs/`](docs/README.md). Start with the [documentation index](docs/README.md) for architecture, business workflows, API routes, local development, and configuration. This README remains the quickstart and end-to-end walkthrough; [`AUDIT.md`](AUDIT.md) is a dated technical audit snapshot.
+
 ---
 
 ## 1. System Architecture
@@ -35,9 +39,10 @@ An enterprise-grade, full-stack web application designed for comprehensive catal
 ### Key Technical Capabilities:
 - **ACID Transaction Integrity:** Real-time stock validation and pessimistic row-level locking (`SELECT ... FOR UPDATE`) during order fulfillment to eliminate overselling and race conditions.
 - **Database Non-Negative Stock Guarantee:** Direct InnoDB table constraint `CONSTRAINT chk_stock_non_negative CHECK (stock_quantity >= 0)`.
-- **Configurable Approval Workflow:** Orders exceeding a dynamic monetary threshold (default `$1,000.00`) automatically transition to `PENDING_APPROVAL`, trigger asynchronous email dispatch to all active managers, and halt stock deduction until managerial sign-off.
+- **Configurable Approval Workflow:** Orders exceeding a dynamic monetary threshold (default `₹75,000.00`) automatically transition to `PENDING_APPROVAL`, trigger asynchronous email dispatch to all active managers, and atomically reserve warehouse stock until managerial sign-off.
+- **Two-Tier Stock Integrity & Allocation:** Pessimistic row locking (`SELECT ... FOR UPDATE`) with explicit stock reservations (`reserved_quantity`), preventing overselling race conditions while orders await manager approval.
 - **Strict Role-Based Access Control (RBAC):** Granular authorization across `ADMIN`, `MANAGER`, and `SALES` roles. Creators are strictly prohibited from approving their own orders (preventing conflict of interest).
-- **Two-Color Forest & Mint Design System:** Strict UI styling utilizing Forest ink (`#0F2E2A`) and soft low-contrast Mint (`#BFEBD5`) with MongoDB-style typography (**Source Serif 4** headings & big KPI numbers; **Figtree** body; `tabular-nums` for all financial values).
+- **Two-Color Forest & Mint Design System:** Strict UI styling utilizing Forest ink (`#0F2E2A`) and soft low-contrast Mint (`#BFEBD5`) with MongoDB-style typography (**Source Serif 4** headings & big KPI numbers; **Figtree** body; `tabular-nums` for all financial values in Indian Rupees `₹`).
 
 ---
 
@@ -50,7 +55,7 @@ An enterprise-grade, full-stack web application designed for comprehensive catal
 - **Database Engine:** MySQL 8.0 InnoDB
 - **Validation & Settings:** Pydantic v2 & `pydantic-settings`
 - **Authentication:** JWT Access (15m) & Refresh Tokens (7d), Bcrypt password hashing
-- **Email Delivery:** Python SMTP via FastAPI `BackgroundTasks`, logged to `email_logs`
+- **Email Delivery:** Jinja2 HTML templates & Python SMTP via FastAPI `BackgroundTasks`, logged to `email_logs`
 - **Testing:** Pytest & FastAPI TestClient
 
 ### Frontend
@@ -90,39 +95,41 @@ docker compose up --build
 
 ## 4. Default Seed Credentials
 
-The database is seeded idempotently on first startup with three pre-configured enterprise roles:
+The database is seeded idempotently on first startup with pre-configured enterprise roles:
 
 | Role | Email Address | Password | Permissions |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@sims.local` *(or `admin@sims.com`)* | `Admin@123456` | Full administrative control, user management, settings |
-| **Manager** | `manager@sims.local` *(or `manager@sims.com`)* | `Manager@123456` | Review/approve orders, adjust stock, manage catalog, settings |
-| **Sales Rep** | `sales@sims.local` *(or `sales@sims.com`)* | `Sales@123456` | Create sales orders, view catalog, register customers |
+| **Admin** | `admin@sims.in` | `Admin@123456` | Full administrative control, user management, settings |
+| **Manager / Super Admin** | `manager@sims.in` | `Manager@123456` | Review/approve orders, adjust stock, manage catalog, settings |
+| **Warehouse Lead** | `warehouse@sims.in` | `Warehouse@123456` | Physical stock adjustments, inward restock, movement ledger, fulfillment |
+| **Finance / Auditor** | `finance@sims.in` | `Finance@123456` | Order audit, tax invoices, email logs, transaction statistics (read-only stock) |
+| **Sales Rep** | `sales@sims.in` | `Sales@123456` | Create sales orders, view catalog, register customers |
 
-*Tip: The login page includes 1-click quick-fill buttons for all three accounts.*
+*Additional seeded regional managers include `priya.manager@sims.in` and `vikram.manager@sims.in` (password `Manager@123456`).*
 
 ---
 
 ## 5. End-to-End Walkthrough: Order Creation & Approval Flow
 
 ### Step 1: Place a High-Value Order as a Sales Rep
-1. Navigate to `http://localhost:3000` and click the **Sales Rep** quick-fill button to log in as `sales@sims.local`.
+1. Navigate to `http://localhost:3000` and sign in with `sales@sims.in` and password `Sales@123456`.
 2. Go to **Sales Orders** → **Create Order**.
-3. Select customer **Apex Global Logistics**.
+3. Select customer **Reliance Retail Ltd**.
 4. Add line items:
-   - Select `PROD-SERVER-05` (Enterprise Rackmount Server, Unit Price: `$2,850.00`, Qty: `1`).
-5. Notice the **live server calculation**: Total is `$2,850.00`.
-6. Notice the calm **"Needs Manager Approval"** banner: because `$2,850.00 > $1,000.00` threshold, the order will require review.
+   - Select `PHONE-APP-15P` (Apple iPhone 15 Pro Max, Unit Price: `₹1,49,900.00`, Qty: `1`).
+5. Notice the **live server calculation**: Total is `₹1,49,900.00`.
+6. Notice the calm **"Needs Manager Approval"** banner: because `₹1,49,900.00 > ₹75,000.00` threshold, the order will require managerial approval.
 7. Click **Submit for Manager Approval**.
-8. The order is placed in status `PENDING_APPROVAL`. Verify that the warehouse stock for `PROD-SERVER-05` has **not** been deducted yet.
+8. The order is placed in status `PENDING_APPROVAL`. The system reserves 1 unit in `reserved_quantity` to guarantee stock availability without premature fulfillment deduction.
 
 ### Step 2: Inspect the Automated Manager Notification Email
 1. Open your browser and navigate to the **Mailpit Web UI** at `http://localhost:8025`.
 2. You will see an email with subject:
    `[Action Required] Order ORD-YYYYMMDD-XXXX Requires Manager Approval`
-3. The email details the customer name, order number, line items total, and requesting sales representative.
+3. The email details the customer name, order number, line items total in `₹`, and requesting sales representative.
 
 ### Step 3: Manager Review & Approval
-1. Log out and log in as **Manager** (`manager@sims.local`).
+1. Log out and log in as **Manager** (`manager@sims.in` / `Manager@123456`).
 2. Navigate to the **Approvals** screen in the sidebar (notice the badge indicator `1`).
 3. Click **Review** on the pending order to inspect line items in the SlideOver drawer.
 4. Click **Approve**.
@@ -131,9 +138,9 @@ The database is seeded idempotently on first startup with three pre-configured e
 
 ### Step 4: Verification of Stock Deduction & Audit Trail
 1. The order status immediately transitions to `COMPLETED`.
-2. Under **Products**, inspect `PROD-SERVER-05`: available stock has been decremented by 1 unit.
+2. Under **Products**, inspect `PHONE-APP-15P`: available and warehouse stock has been decremented by 1 unit and reservation released.
 3. Under **Inventory** → **Movement Ledger**: an immutable ledger record of type `OUT` is visible with the reference order number and the resulting `balance_after`.
-4. In Mailpit (`http://localhost:8025`), inspect the second email sent to `sales@sims.local` confirming:
+4. In Mailpit (`http://localhost:8025`), inspect the second email sent to `sales@sims.in` confirming:
    `[Order Update] Your Order ORD-YYYYMMDD-XXXX has been APPROVED`.
 
 ---
