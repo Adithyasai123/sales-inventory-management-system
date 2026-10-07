@@ -1,6 +1,6 @@
 import { apiClient } from '../lib/axios';
 import { PaginatedResponse, MessageResponse } from '../types';
-import { User, Tokens, LoginPayload, Role, RoleCreatePayload, RoleUpdatePayload } from '../types/auth';
+import { User, Tokens, LoginPayload, LoginResponse, RefreshResponse, Role, RoleCreatePayload, RoleUpdatePayload } from '../types/auth';
 import { Customer, CustomerInput } from '../types/customer';
 import { Product, ProductInput, StockAdjustPayload } from '../types/product';
 import { SalesOrder, OrderDetail, CreateOrderPayload, OrderStatus } from '../types/order';
@@ -16,13 +16,19 @@ import {
 import { SystemSetting, ThresholdUpdatePayload } from '../types/setting';
 
 export const authApi = {
-  login: async (payload: LoginPayload): Promise<Tokens> => {
-    const { data } = await apiClient.post<Tokens>('/auth/login', payload);
+  login: async (payload: LoginPayload): Promise<LoginResponse> => {
+    const { data } = await apiClient.post<LoginResponse>('/auth/login', payload);
     return data;
   },
-  refresh: async (refreshToken: string): Promise<Tokens> => {
-    const { data } = await apiClient.post<Tokens>('/auth/refresh', { refresh_token: refreshToken });
+  refresh: async (refreshToken?: string): Promise<RefreshResponse> => {
+    const { data } = await apiClient.post<RefreshResponse>(
+      '/auth/refresh',
+      refreshToken ? { refresh_token: refreshToken } : {}
+    );
     return data;
+  },
+  logout: async (): Promise<void> => {
+    await apiClient.post('/auth/logout');
   },
   getMe: async (): Promise<User> => {
     const { data } = await apiClient.get<User>('/auth/me');

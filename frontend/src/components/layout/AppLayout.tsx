@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { CommandPalette } from './CommandPalette';
+import { ContentLoader } from '../ui/Loader';
 
 export const AppLayout: React.FC = () => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -32,7 +33,9 @@ export const AppLayout: React.FC = () => {
 
         {/* Main Content Viewport */}
         <main className="min-w-0 flex flex-col">
-          <Outlet />
+          <Suspense fallback={<ContentLoader message="Loading..." />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 

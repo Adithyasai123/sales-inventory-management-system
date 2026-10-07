@@ -35,22 +35,16 @@ def run_screenshots():
             context = browser.new_context(viewport={'width': width, 'height': height})
             page = context.new_page()
 
-            # Set dark mode local storage if requested
+            # Set dark mode cookie if requested
             if 'dark' in mode:
-                page.add_init_script("localStorage.setItem('theme-mode', 'dark');")
+                page.add_init_script("document.cookie = 'theme-mode=dark; path=/; max-age=31536000';")
             else:
-                page.add_init_script("localStorage.setItem('theme-mode', 'light');")
+                page.add_init_script("document.cookie = 'theme-mode=light; path=/; max-age=31536000';")
 
-            # Login automatically via localStorage token
+            # Login automatically via cookie tokens
             page.add_init_script("""
-              localStorage.setItem('auth_token', 'mock_admin_token');
-              localStorage.setItem('sims_user', JSON.stringify({
-                id: 1,
-                email: 'admin@sims.local',
-                full_name: 'Marcus Sterling',
-                role: 'ADMIN',
-                is_active: true
-              }));
+              document.cookie = 'access_token=mock_admin_token; path=/; max-age=86400';
+              document.cookie = 'refresh_token=mock_refresh_token; path=/; max-age=604800';
             """)
 
             target_url = f"{base_url}{url_path}"

@@ -70,6 +70,39 @@ export const PageLoader: React.FC<PageLoaderProps> = ({ message = 'Loading works
   );
 };
 
+export interface ContentLoaderProps {
+  message?: string;
+  className?: string;
+}
+
+export const ContentLoader: React.FC<ContentLoaderProps> = ({
+  message = 'Loading...',
+  className,
+}) => {
+  return (
+    <div
+      className={cn(
+        'w-full min-h-[60vh] flex flex-col items-center justify-center p-8 animate-fadeIn',
+        className
+      )}
+      role="status"
+      aria-label={message}
+    >
+      <div className="flex flex-col items-center gap-3.5">
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <div className="absolute inset-0 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+          <SimsLogo size={24} className="opacity-90" />
+        </div>
+        {message && (
+          <p className="text-xs font-semibold text-textMuted tracking-wider uppercase animate-pulse">
+            {message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export interface GlassCardLoaderProps {
   lines?: number;
   className?: string;

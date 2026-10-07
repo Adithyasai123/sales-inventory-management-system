@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, LoginPayload } from '../types/auth';
 import { authApi } from '../api';
+import { authStorage } from '../lib/cookies';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
@@ -25,18 +26,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
+        // Authenticate directly via browser's protected HttpOnly cookie
         const currentUser = await authApi.getMe();
         setUser(currentUser);
       } catch (error) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        authStorage.clearTokens();
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -44,18 +39,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initAuth();
+
+    // Listen for session expiration events broadcasted by axios interceptor
+    const handleAuthExpired = () => {
+      authStorage.clearTokens();
+      setUser(null);
+    };
+
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
   }, []);
 
   const login = async (payload: LoginPayload) => {
     setIsLoading(true);
     try {
-      const tokens = await authApi.login(payload);
-      localStorage.setItem('access_token', tokens.access_token);
-      localStorage.setItem('refresh_token', tokens.refresh_token);
+      const res = await authApi.login(payload);
+      // Clean up any legacy localStorage/unprotected tokens
+      authStorage.clearTokens();
 
-      const currentUser = await authApi.getMe();
-      setUser(currentUser);
-      toast.success(`Welcome back, ${currentUser.full_name}!`);
+      if (res.user) {
+        setUser(res.user);
+        toast.success(`Welcome back, ${res.user.full_name}!`);
+      } else {
+        const currentUser = await authApi.getMe();
+        setUser(currentUser);
+        toast.success(`Welcome back, ${currentUser.full_name}!`);
+      }
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed. Please verify credentials.';
       toast.error(message);
@@ -65,12 +74,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {}
+    authStorage.clearTokens();
     setUser(null);
     toast.success('Logged out successfully.');
-    window.location.href = '/login';
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
   };
 
   const isSuperAdmin = !!user?.is_super_admin || user?.email === 'manager@sims.in';

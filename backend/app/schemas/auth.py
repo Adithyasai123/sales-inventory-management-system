@@ -27,7 +27,16 @@ class TokenResponse(BaseModel):
 
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None
+
+
+class LoginResponse(BaseModel):
+    message: str = "Login successful"
+    user: Optional["UserMeResponse"] = None
+
+
+class RefreshResponse(BaseModel):
+    message: str = "Token refreshed successfully"
 
 
 class UserMeResponse(BaseModel):

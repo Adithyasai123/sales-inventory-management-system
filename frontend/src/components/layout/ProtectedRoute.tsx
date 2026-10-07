@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/auth';
 import { Skeleton } from '../ui/Skeleton';
-import { PageLoader } from '../ui/Loader';
+import { PageLoader, ContentLoader } from '../ui/Loader';
 import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -23,6 +23,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const navigate = useNavigate();
 
   if (isLoading) {
+    if (screenId || allowedRoles) {
+      return <ContentLoader message="Verifying access..." />;
+    }
     return <PageLoader message="Verifying session..." />;
   }
 

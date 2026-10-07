@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { authStorage } from './cookies';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -7,6 +8,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 let isRefreshing = false;
@@ -29,7 +31,7 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request interceptor: attach access token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('access_token');
+    const token = authStorage.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,8 +46,16 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+      if (
+        originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/refresh') ||
+        originalRequest.url?.includes('/auth/logout')
+      ) {
         return Promise.reject(error);
       }
 
@@ -54,7 +64,7 @@ apiClient.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            if (originalRequest.headers) {
+            if (token && originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
             return apiClient(originalRequest);
@@ -65,35 +75,35 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (!refreshToken) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
+      const refreshToken = authStorage.getRefreshToken();
 
       try {
-        const { data } = await axios.post(`${API_BASE}/api/v1/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        const { data } = await axios.post(
+          `${API_BASE}/api/v1/auth/refresh`,
+          refreshToken ? { refresh_token: refreshToken } : {},
+          { withCredentials: true }
+        );
 
-        const newAccessToken = data.access_token;
-        const newRefreshToken = data.refresh_token;
+        const newAccessToken = data?.access_token;
 
-        localStorage.setItem('access_token', newAccessToken);
-        localStorage.setItem('refresh_token', newRefreshToken);
-
-        if (originalRequest.headers) {
+        if (newAccessToken && originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
         processQueue(null, newAccessToken);
         return apiClient(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        authStorage.clearTokens();
+
+        // Avoid hard page reloads (window.location.href) which cause infinite flickering loops!
+        // Instead, broadcast session expiration to AuthContext so React Router handles navigation cleanly.
+        if (
+          !originalRequest.url?.includes('/auth/me') &&
+          typeof window !== 'undefined' &&
+          window.location.pathname !== '/login'
+        ) {
+          window.dispatchEvent(new CustomEvent('auth:expired'));
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

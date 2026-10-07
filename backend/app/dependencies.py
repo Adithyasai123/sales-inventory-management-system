@@ -15,14 +15,21 @@ security_bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer),
     db: Session = Depends(get_db),
 ) -> User:
-    if not credentials or not credentials.credentials:
+    token_str: Optional[str] = None
+    if credentials and credentials.credentials:
+        token_str = credentials.credentials
+    elif "access_token" in request.cookies:
+        token_str = request.cookies.get("access_token")
+
+    if not token_str:
         raise UnauthorizedException("Authentication token is required")
 
     try:
-        payload = decode_token(credentials.credentials, settings.JWT_SECRET_KEY)
+        payload = decode_token(token_str, settings.JWT_SECRET_KEY)
         if payload.get("type") != "access":
             raise UnauthorizedException("Invalid token type")
         user_id = int(payload.get("sub"))

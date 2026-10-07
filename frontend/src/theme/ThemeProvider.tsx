@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { lightTheme, darkTheme, ThemeDefinition, ThemeColors } from './theme.config';
+import { getCookie, setCookie } from '../lib/cookies';
 
 type ResolvedTheme = 'light' | 'dark';
 
@@ -30,8 +31,11 @@ function hexToRgb(hex: string): string {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ResolvedTheme>(() => {
     try {
-      const saved = localStorage.getItem('theme-mode');
+      const saved = getCookie('theme-mode') || (typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('theme-mode') : null);
       if (saved === 'light' || saved === 'dark') {
+        // Clean up legacy localStorage if present
+        try { localStorage.removeItem('theme-mode'); } catch {}
+        setCookie('theme-mode', saved, { days: 365 });
         return saved;
       }
       // First visit: follow OS preference once
@@ -45,7 +49,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setTheme = (newTheme: ResolvedTheme) => {
     setThemeState(newTheme);
     try {
-      localStorage.setItem('theme-mode', newTheme);
+      setCookie('theme-mode', newTheme, { days: 365 });
+      localStorage.removeItem('theme-mode');
     } catch {}
   };
 
