@@ -47,6 +47,7 @@ class EmailService:
             # 1. First priority: Resend HTTP API (HTTPS port 443 - works on Render, Vercel, and all cloud providers without SMTP port blocking)
             if settings.RESEND_API_KEY:
                 try:
+                    logger.info(f"Attempting live email delivery via Resend HTTP API to {to_email}...")
                     import httpx
                     resend_payload = {
                         "from": f"{settings.EMAILS_FROM_NAME} <onboarding@resend.dev>",
