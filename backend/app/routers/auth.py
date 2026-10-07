@@ -17,7 +17,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=LoginResponse, dependencies=[Depends(check_login_rate_limit)])
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    """Authenticate with email and password, setting secure encrypted HttpOnly cookies without exposing tokens."""
+    """Authenticate with email and password, setting secure HttpOnly cookies and returning tokens for cross-origin resilience."""
     service = AuthService(db)
     user = service.user_repo.get_by_email(payload.email)
     tokens = service.login(payload.email, payload.password)
@@ -25,13 +25,17 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     encrypted_access_token = encrypt_token(tokens.access_token)
     encrypted_refresh_token = encrypt_token(tokens.refresh_token)
 
-    # Store encrypted tokens in secure HttpOnly cookies ONLY
+    is_prod = settings.ENVIRONMENT == "production"
+    samesite_val = "none" if is_prod else "lax"
+    secure_val = True if is_prod else False
+
+    # Store encrypted tokens in secure HttpOnly cookies
     response.set_cookie(
         key="access_token",
         value=encrypted_access_token,
         httponly=True,
-        samesite="lax",
-        secure=settings.ENVIRONMENT == "production",
+        samesite=samesite_val,
+        secure=secure_val,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
@@ -39,13 +43,15 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
         key="refresh_token",
         value=encrypted_refresh_token,
         httponly=True,
-        samesite="lax",
-        secure=settings.ENVIRONMENT == "production",
+        samesite=samesite_val,
+        secure=secure_val,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/",
     )
     return LoginResponse(
         message="Login successful",
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         user=user,
     )
 
@@ -57,7 +63,7 @@ def refresh_token(
     payload: Optional[RefreshTokenRequest] = None,
     db: Session = Depends(get_db),
 ):
-    """Exchange a valid refresh token (from encrypted HttpOnly cookie or body) for a fresh pair in cookies."""
+    """Exchange a valid refresh token (from body or encrypted HttpOnly cookie) for a fresh pair."""
     token_str: Optional[str] = None
     if payload and payload.refresh_token:
         token_str = payload.refresh_token
@@ -73,12 +79,16 @@ def refresh_token(
     encrypted_access_token = encrypt_token(tokens.access_token)
     encrypted_refresh_token = encrypt_token(tokens.refresh_token)
 
+    is_prod = settings.ENVIRONMENT == "production"
+    samesite_val = "none" if is_prod else "lax"
+    secure_val = True if is_prod else False
+
     response.set_cookie(
         key="access_token",
         value=encrypted_access_token,
         httponly=True,
-        samesite="lax",
-        secure=settings.ENVIRONMENT == "production",
+        samesite=samesite_val,
+        secure=secure_val,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
@@ -86,28 +96,35 @@ def refresh_token(
         key="refresh_token",
         value=encrypted_refresh_token,
         httponly=True,
-        samesite="lax",
-        secure=settings.ENVIRONMENT == "production",
+        samesite=samesite_val,
+        secure=secure_val,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
         path="/",
     )
     return RefreshResponse(
         message="Token refreshed successfully",
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
     )
 
 
 @router.post("/logout")
 def logout(response: Response):
     """Clear HttpOnly authentication cookies to securely end the session."""
+    is_prod = settings.ENVIRONMENT == "production"
+    samesite_val = "none" if is_prod else "lax"
+    secure_val = True if is_prod else False
     response.delete_cookie(
         key="access_token",
         path="/",
-        samesite="lax",
+        samesite=samesite_val,
+        secure=secure_val,
     )
     response.delete_cookie(
         key="refresh_token",
         path="/",
-        samesite="lax",
+        samesite=samesite_val,
+        secure=secure_val,
     )
     return {"message": "Logged out successfully"}
 

@@ -104,12 +104,14 @@ export const MainEventLoader: React.FC = () => {
   const isMutating = useIsMutating();
   const { customLoader, isGlobalMutating } = useEventLoader();
 
+  const isLoginPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/login');
+
   const pendingMutations = useMutationState({
     filters: { status: 'pending' },
     select: (m) => m.options.mutationKey,
   });
 
-  const isActive = isMutating > 0 || isGlobalMutating || customLoader.isOpen;
+  const isActive = !isLoginPage && (isMutating > 0 || isGlobalMutating || customLoader.isOpen);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

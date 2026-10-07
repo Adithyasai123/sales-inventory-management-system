@@ -32,11 +32,17 @@ class RefreshTokenRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     message: str = "Login successful"
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
     user: Optional["UserMeResponse"] = None
 
 
 class RefreshResponse(BaseModel):
     message: str = "Token refreshed successfully"
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
 
 
 from datetime import datetime
