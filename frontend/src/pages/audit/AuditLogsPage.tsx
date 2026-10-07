@@ -29,6 +29,7 @@ export const AuditLogsPage: React.FC = () => {
     {
       key: 'status',
       header: 'Delivery Status',
+      width: '140px',
       render: (log) => {
         switch (log.status) {
           case 'SENT':
@@ -57,6 +58,7 @@ export const AuditLogsPage: React.FC = () => {
     {
       key: 'recipient',
       header: 'Recipient',
+      width: '240px',
       render: (log) => (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-surfaceAlt border border-border flex items-center justify-center text-textMuted shrink-0">
@@ -69,6 +71,7 @@ export const AuditLogsPage: React.FC = () => {
     {
       key: 'subject',
       header: 'Subject & Preview',
+      width: '380px',
       render: (log) => (
         <div className="flex flex-col max-w-[380px]">
           <span className="font-medium text-text text-sm truncate">{log.subject}</span>
@@ -81,12 +84,14 @@ export const AuditLogsPage: React.FC = () => {
     {
       key: 'created_at',
       header: 'Timestamp',
+      width: '160px',
       className: 'text-textMuted text-[11px] tabular-nums',
       render: (log) => formatDate(log.created_at),
     },
     {
       key: 'actions',
       header: 'Inspect',
+      width: '100px',
       render: (log) => (
         <button
           onClick={() => setSelectedLog(log)}

@@ -12,6 +12,7 @@ import { formatCurrency, formatDate } from '../../lib/utils';
 import { Plus, Eye, Ban, CheckCircle2, Clock, Download, FileText, Printer } from 'lucide-react';
 import { ordersApi } from '../../api';
 import { InvoiceModal } from '../../components/orders/InvoiceModal';
+import { OrderReviewDrawerSkeleton } from '../../components/orders/OrderReviewDrawerSkeleton';
 
 export const OrdersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,38 +62,45 @@ export const OrdersListPage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Order #',
-      className: 'font-mono text-[11px] text-body ',
+      width: '160px',
+      className: 'font-mono text-[11px] text-body',
     },
     {
       key: 'customer_name',
       header: 'Customer',
-      render: (o) => <span className="text-body">{o.customer_name}</span>,
+      width: '280px',
+      render: (o) => <span className="text-body font-medium">{o.customer_name}</span>,
     },
     {
       key: 'creator_name',
       header: 'Created By',
+      width: '140px',
       render: (o) => <span className="text-muted text-caption">{o.creator_name}</span>,
     },
     {
       key: 'status',
       header: 'Status',
+      width: '130px',
       render: (o) => <StatusBadge status={o.status} size="sm" />,
     },
     {
       key: 'total_amount',
       header: 'Total Amount',
-      className: 'tabular-nums text-body ',
+      width: '140px',
+      className: 'tabular-nums text-body',
       render: (o) => formatCurrency(o.total_amount),
     },
     {
       key: 'created_at',
       header: 'Date',
+      width: '160px',
       className: 'text-muted text-[11px]',
       render: (o) => formatDate(o.created_at),
     },
     {
       key: 'actions',
       header: 'Actions',
+      width: '90px',
       render: (o) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
@@ -189,10 +197,7 @@ export const OrdersListPage: React.FC = () => {
         width="lg"
       >
         {isLoadingDetail || !orderDetail ? (
-          <div className="flex flex-col gap-3 py-4">
-            <div className="h-6 w-32 bg-primarySoft animate-pulse rounded-full" />
-            <div className="h-24 w-full bg-primarySoft animate-pulse rounded-card" />
-          </div>
+          <OrderReviewDrawerSkeleton />
         ) : (
           <div className="flex flex-col gap-6">
             {/* Top Status & Customer Overview */}

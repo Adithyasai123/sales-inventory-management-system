@@ -47,22 +47,26 @@ export const InventoryPage: React.FC = () => {
     {
       key: 'created_at',
       header: 'Timestamp',
+      width: '160px',
       className: 'text-muted text-[11px]',
       render: (m) => formatDate(m.created_at),
     },
     {
       key: 'product_sku',
       header: 'SKU',
+      width: '130px',
       className: 'font-mono text-[11px] text-body font-medium',
     },
     {
       key: 'product_name',
       header: 'Product Name',
+      width: '260px',
       render: (m) => <span className="text-body font-medium">{m.product_name}</span>,
     },
     {
       key: 'movement_type',
       header: 'Type',
+      width: '160px',
       render: (m) => {
         if (m.movement_type === 'IN') {
           return (
@@ -88,6 +92,7 @@ export const InventoryPage: React.FC = () => {
     {
       key: 'quantity',
       header: 'Qty Change',
+      width: '120px',
       className: 'text-right tabular-nums font-semibold',
       render: (m) => (
         <span className={m.quantity > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
@@ -98,11 +103,13 @@ export const InventoryPage: React.FC = () => {
     {
       key: 'balance_after',
       header: 'Balance After',
+      width: '130px',
       className: 'text-right tabular-nums text-body font-medium',
     },
     {
       key: 'reason',
       header: 'Audit Reason / Reference',
+      width: '220px',
       render: (m) => (
         <span className="text-caption text-muted">
           {m.reason || (m.reference_order_id ? `Order #${m.reference_order_id}` : '-')}
@@ -115,16 +122,19 @@ export const InventoryPage: React.FC = () => {
     {
       key: 'sku',
       header: 'SKU',
+      width: '140px',
       className: 'font-mono text-[11px] text-body font-medium',
     },
     {
       key: 'name',
       header: 'Product Name',
+      width: '280px',
       render: (item) => <span className="text-body font-medium">{item.name}</span>,
     },
     {
       key: 'category',
       header: 'Category',
+      width: '140px',
       render: (item) => (
         <span className="px-2 py-0.5 rounded-full bg-surfaceAlt text-muted text-[11px] border border-border">
           {item.category || 'General'}
@@ -134,16 +144,19 @@ export const InventoryPage: React.FC = () => {
     {
       key: 'stock_quantity',
       header: 'Current Stock',
+      width: '140px',
       className: 'tabular-nums text-text font-semibold text-right',
     },
     {
       key: 'reorder_level',
       header: 'Reorder Level',
+      width: '140px',
       className: 'tabular-nums text-muted text-right',
     },
     {
       key: 'shortage',
       header: 'Deficit / Shortage',
+      width: '160px',
       className: 'tabular-nums text-right',
       render: (item) => (
         <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-semibold">

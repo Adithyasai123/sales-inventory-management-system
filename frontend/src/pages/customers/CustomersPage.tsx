@@ -93,6 +93,7 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'name',
       header: 'Customer',
+      width: '280px',
       render: (c) => (
         <div>
           <span className="text-body block">{c.name}</span>
@@ -107,6 +108,7 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'email',
       header: 'Contact',
+      width: '260px',
       render: (c) => (
         <div className="flex flex-col gap-0.5 text-caption">
           <span className="flex items-center gap-1 text-text">
@@ -123,6 +125,7 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'location',
       header: 'Location',
+      width: '180px',
       render: (c) => (
         <span className="text-caption">
           {[c.city, c.country].filter(Boolean).join(', ') || '-'}
@@ -132,6 +135,7 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'status',
       header: 'Status',
+      width: '140px',
       render: (c) => (
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <Toggle
@@ -168,6 +172,7 @@ export const CustomersPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
+      width: '100px',
       render: (c) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
