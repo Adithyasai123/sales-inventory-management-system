@@ -21,6 +21,7 @@ import { InventoryHealthChart } from '../../components/dashboard/InventoryHealth
 import { MovementsTrendChart } from '../../components/dashboard/MovementsTrendChart';
 import { RecentOrdersTable } from '../../components/dashboard/RecentOrdersTable';
 import { PendingApprovalsCard } from '../../components/dashboard/PendingApprovalsCard';
+import { DateRangePicker, DateRange } from '../../components/ui/DateRangePicker';
 import { Button } from '../../components/ui/Button';
 import { Plus, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -28,7 +29,21 @@ import { cn } from '../../lib/utils';
 export const DashboardPage: React.FC = () => {
   const { user, isManager, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [range, setRange] = useState<number>(30);
+
+  // Custom Date Range State matching Untitled UI design (Image 2)
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 30);
+    return {
+      startDate: start,
+      endDate: end,
+      label: 'This month',
+      days: 30,
+    };
+  });
+
+  const range = dateRange.days;
 
   // Can user see and act on pending approvals?
   const canApprove = isManager || isAdmin;
@@ -87,6 +102,7 @@ export const DashboardPage: React.FC = () => {
 
   const cleanName = (user?.full_name || 'User').replace(/\s*\([^)]*\)/g, '').trim();
 
+
   return (
     <div className="flex flex-col gap-6">
       {/* 1. Clean Non-sticky Page Header */}
@@ -98,7 +114,7 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
           {/* Live syncing indicator */}
           {isSummaryLoading && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surfaceAlt border border-border text-[11px] text-muted animate-fadeIn select-none">
@@ -107,23 +123,11 @@ export const DashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Date-range toggle pills: 7d / 30d / 90d */}
-          <div className="flex items-center p-0.5 rounded-pill bg-surfaceAlt border border-border select-none">
-            {([7, 30, 90] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={cn(
-                  'px-3 py-1 text-label rounded-pill transition-all duration-150',
-                  range === r
-                    ? 'bg-surface text-text shadow-card '
-                    : 'text-muted hover:text-text'
-                )}
-              >
-                {r}d
-              </button>
-            ))}
-          </div>
+          {/* Custom Date Range Picker Dropdown (Untitled UI design) */}
+          <DateRangePicker
+            value={dateRange}
+            onChange={(newRange) => setDateRange(newRange)}
+          />
 
           {/* Create Sales Order CTA */}
           <Button

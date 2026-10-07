@@ -33,6 +33,7 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['products', 'create'],
     mutationFn: (payload: ProductInput) => productsApi.create(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -49,6 +50,7 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['products', 'update'],
     mutationFn: ({ id, payload }: { id: number; payload: Partial<ProductInput> }) =>
       productsApi.update(id, payload),
     onSuccess: (data) => {
@@ -66,6 +68,7 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['products', 'delete'],
     mutationFn: (id: number) => productsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -81,6 +84,7 @@ export function useRestoreProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['products', 'restore'],
     mutationFn: (id: number) => productsApi.restore(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -96,6 +100,7 @@ export function useAdjustStock() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['products', 'adjust-stock'],
     mutationFn: ({ id, payload }: { id: number; payload: StockAdjustPayload }) =>
       productsApi.adjustStock(id, payload),
     onSuccess: (data) => {

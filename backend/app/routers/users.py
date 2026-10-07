@@ -1,23 +1,33 @@
-from typing import Optional
+from typing import Optional, List
 import math
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.core.exceptions import EntityNotFoundException, DuplicateResourceException, PermissionDeniedException
 from app.dependencies import get_current_user, require_role
 from app.models.user import User, UserRole
+from app.repositories.base import to_paginated_response
 from app.repositories.user_repo import UserRepository
 from app.repositories.role_repo import RoleRepository
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserHierarchyNode
 from app.schemas.common import PaginatedResponse, MessageResponse
 
 router = APIRouter(
     prefix="/users",
     tags=["Users (Manager / Admin / Super Admin)"],
-    dependencies=[Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))],
 )
+
+
+def _can_manage_users(user: User) -> bool:
+    return (
+        user.is_super_admin
+        or user.role in [UserRole.ADMIN, UserRole.MANAGER, "ADMIN", "MANAGER"]
+        or user.has_permission("can_manage_users")
+        or "users" in user.allowed_screens
+    )
 
 
 def _check_is_super(user: User) -> bool:
@@ -26,6 +36,57 @@ def _check_is_super(user: User) -> bool:
         or user.role == UserRole.ADMIN
         or user.email in ["manager@sims.in", "manager@sims.local", "manager@sims.com", "admin@test.com", "admin@sims.local", "admin@sims.in"]
     )
+
+
+@router.get("/hierarchy", response_model=List[UserHierarchyNode])
+def get_user_hierarchy(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retrieve full organizational hierarchy tree (Super Admin -> Regional Managers -> Direct Employees)."""
+    from app.models.order import SalesOrder
+
+    # Fetch all active non-deleted users
+    all_users = (
+        db.query(User)
+        .filter(User.is_deleted == False)
+        .order_by(User.is_super_admin.desc(), User.role.asc(), User.full_name.asc())
+        .all()
+    )
+
+    order_counts = dict(
+        db.query(SalesOrder.creator_id, func.count(SalesOrder.id))
+        .group_by(SalesOrder.creator_id)
+        .all()
+    )
+
+    user_map = {}
+    for u in all_users:
+        user_map[u.id] = UserHierarchyNode(
+            id=u.id,
+            full_name=u.full_name,
+            email=u.email,
+            role=u.role if isinstance(u.role, str) else u.role.value,
+            branch=getattr(u, "branch", "Hyderabad") or "Hyderabad",
+            is_active=u.is_active,
+            is_super_admin=u.is_super_admin,
+            manager_id=u.manager_id,
+            manager_name=None,
+            direct_reports=[],
+            orders_count=order_counts.get(u.id, 0),
+        )
+
+    root_nodes: List[UserHierarchyNode] = []
+    for u in all_users:
+        node = user_map[u.id]
+        if u.manager_id and u.manager_id in user_map:
+            parent = user_map[u.manager_id]
+            node.manager_name = parent.full_name
+            parent.direct_reports.append(node)
+        else:
+            root_nodes.append(node)
+
+    return root_nodes
 
 
 @router.get("", response_model=PaginatedResponse[UserResponse])
@@ -38,12 +99,16 @@ def list_users(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List system users. Super Admin & Admins see all users; Regional Managers only see employees in their team."""
+    """List system users. Super Admin & Admins see all users; Regional Managers and Team Leads see employees in their circle and reporting line."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to view team members.")
+
     repo = UserRepository(db)
     skip = (page - 1) * page_size
 
     is_super = _check_is_super(current_user)
     scoped_manager_id = None if is_super else current_user.id
+    scoped_branch = None if is_super else getattr(current_user, "branch", None)
 
     items, total = repo.list_users(
         skip=skip,
@@ -52,15 +117,41 @@ def list_users(
         search=search,
         include_deleted=include_deleted,
         scoped_manager_id=scoped_manager_id,
+        scoped_branch=scoped_branch,
     )
-    total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-    return PaginatedResponse(
-        items=items,
+    # Enrich with manager names and direct report counts
+    manager_ids = {u.manager_id for u in items if u.manager_id}
+    managers = (
+        dict(db.query(User.id, User.full_name).filter(User.id.in_(manager_ids)).all())
+        if manager_ids
+        else {}
+    )
+
+    user_ids = [u.id for u in items]
+    report_counts = (
+        dict(
+            db.query(User.manager_id, func.count(User.id))
+            .filter(User.manager_id.in_(user_ids), User.is_deleted == False)
+            .group_by(User.manager_id)
+            .all()
+        )
+        if user_ids
+        else {}
+    )
+
+    response_items = []
+    for u in items:
+        ur = UserResponse.model_validate(u)
+        ur.manager_name = managers.get(u.manager_id)
+        ur.direct_reports_count = report_counts.get(u.id, 0)
+        response_items.append(ur)
+
+    return to_paginated_response(
+        items=response_items,
         total=total,
         page=page,
         page_size=page_size,
-        total_pages=total_pages,
     )
 
 
@@ -70,7 +161,10 @@ def create_user(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Create a new user. Super Admin can create Managers & Employees; Managers can create their team employees."""
+    """Create a new user. Super Admin can create Managers & Admins; Managers & Leads can create operational staff."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to create users.")
+
     is_super = _check_is_super(current_user)
 
     role_repo = RoleRepository(db)
@@ -83,18 +177,31 @@ def create_user(
     elif target_role_str:
         db_role = role_repo.get_by_name(target_role_str)
 
-    # Non-super-admin managers can only create operational staff
+    # Non-super-admins cannot create ADMIN or MANAGER roles
     if not is_super and target_role_str in ["ADMIN", "MANAGER"]:
-        raise PermissionDeniedException("Managers can only create operational staff. Super Admin creates Managers & Admins.")
+        raise PermissionDeniedException("Only Super Admin can create Managers and Admins. You can create operational staff (Sales, Warehouse, Finance).")
 
     repo = UserRepository(db)
     clean_email = payload.email.lower().strip()
     if db.query(User).filter(User.email == clean_email).first():
         raise DuplicateResourceException("User", "email", clean_email)
 
-    assigned_manager_id = payload.manager_id if is_super else current_user.id
-    if is_super and not assigned_manager_id and target_role_str == "SALES":
-        assigned_manager_id = current_user.id
+    if is_super:
+        assigned_manager_id = payload.manager_id or current_user.id
+    else:
+        # A manager or lead can assign to themselves or any active lead/manager in their circle
+        if payload.manager_id:
+            target_mgr = db.query(User).filter(User.id == payload.manager_id, User.is_deleted == False).first()
+            if target_mgr and (
+                target_mgr.id == current_user.id
+                or target_mgr.branch == current_user.branch
+                or target_mgr.manager_id == current_user.id
+            ):
+                assigned_manager_id = target_mgr.id
+            else:
+                assigned_manager_id = current_user.id
+        else:
+            assigned_manager_id = current_user.id
 
     new_user = User(
         email=clean_email,
@@ -106,6 +213,7 @@ def create_user(
         is_super_admin=False,
         manager_id=assigned_manager_id,
         created_by_id=current_user.id,
+        branch=payload.branch if is_super else (payload.branch or getattr(current_user, "branch", "Hyderabad") or "Hyderabad"),
     )
     if payload.allowed_screens is not None:
         screens = payload.allowed_screens
@@ -128,16 +236,42 @@ def get_user(
     db: Session = Depends(get_db),
 ):
     """Fetch user details by ID."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to view this user.")
+
     repo = UserRepository(db)
     user = repo.get_by_id(id)
     if not user:
         raise EntityNotFoundException("User", id)
 
     is_super = _check_is_super(current_user)
-    if not is_super and user.created_by_id != current_user.id and user.manager_id != current_user.id:
-        raise PermissionDeniedException("You can only view employees in your team.")
+    if not is_super:
+        is_allowed = (
+            user.id == current_user.id
+            or user.created_by_id == current_user.id
+            or user.manager_id == current_user.id
+            or (user.branch and user.branch == current_user.branch)
+        )
+        if not is_allowed:
+            raise PermissionDeniedException("You can only view employees in your team or circle.")
 
-    return user
+    manager_name = None
+    if user.manager_id:
+        mgr = db.query(User).filter(User.id == user.manager_id).first()
+        if mgr:
+            manager_name = mgr.full_name
+
+    direct_reports_count = (
+        db.query(func.count(User.id))
+        .filter(User.manager_id == user.id, User.is_deleted == False)
+        .scalar()
+        or 0
+    )
+
+    res = UserResponse.model_validate(user)
+    res.manager_name = manager_name
+    res.direct_reports_count = direct_reports_count
+    return res
 
 
 @router.put("/{id}", response_model=UserResponse)
@@ -147,15 +281,24 @@ def update_user(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Update user attributes. Managers can only update employees in their own team."""
+    """Update user attributes. Managers and leads can update employees in their own team or circle."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to modify users.")
+
     repo = UserRepository(db)
     user = repo.get_by_id(id)
     if not user:
         raise EntityNotFoundException("User", id)
 
     is_super = _check_is_super(current_user)
-    if not is_super and user.created_by_id != current_user.id and user.manager_id != current_user.id:
-        raise PermissionDeniedException("You can only modify employees belonging to your team.")
+    if not is_super:
+        is_allowed = (
+            user.created_by_id == current_user.id
+            or user.manager_id == current_user.id
+            or (user.branch and user.branch == current_user.branch)
+        )
+        if not is_allowed:
+            raise PermissionDeniedException("You can only modify employees belonging to your team or circle.")
 
     # Guardrails for the single Super Admin
     if user.is_super_admin:
@@ -212,6 +355,9 @@ def delete_user(
     db: Session = Depends(get_db),
 ):
     """Soft-delete a user."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to delete users.")
+
     repo = UserRepository(db)
     user = repo.get_by_id(id)
     if not user:
@@ -221,8 +367,14 @@ def delete_user(
         raise PermissionDeniedException("The single Super Admin account cannot be deleted or deactivated.")
 
     is_super = _check_is_super(current_user)
-    if not is_super and user.created_by_id != current_user.id and user.manager_id != current_user.id:
-        raise PermissionDeniedException("You can only deactivate employees belonging to your team.")
+    if not is_super:
+        is_allowed = (
+            user.created_by_id == current_user.id
+            or user.manager_id == current_user.id
+            or (user.branch and user.branch == current_user.branch)
+        )
+        if not is_allowed:
+            raise PermissionDeniedException("You can only deactivate employees belonging to your team or circle.")
 
     repo.delete(user, soft=True)
     db.commit()
@@ -236,14 +388,23 @@ def restore_user(
     db: Session = Depends(get_db),
 ):
     """Restore a soft-deleted user."""
+    if not _can_manage_users(current_user):
+        raise PermissionDeniedException("You do not have permission to restore users.")
+
     repo = UserRepository(db)
     user = repo.get_by_id_including_deleted(id)
     if not user:
         raise EntityNotFoundException("User", id)
 
     is_super = _check_is_super(current_user)
-    if not is_super and user.created_by_id != current_user.id and user.manager_id != current_user.id:
-        raise PermissionDeniedException("You can only restore employees belonging to your team.")
+    if not is_super:
+        is_allowed = (
+            user.created_by_id == current_user.id
+            or user.manager_id == current_user.id
+            or (user.branch and user.branch == current_user.branch)
+        )
+        if not is_allowed:
+            raise PermissionDeniedException("You can only restore employees belonging to your team or circle.")
 
     repo.restore(user)
     db.commit()

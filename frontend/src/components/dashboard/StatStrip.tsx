@@ -106,15 +106,16 @@ export const StatStrip: React.FC<StatStripProps> = ({
         <div
           key={tile.id}
           className={cn(
-            'h-[82px] rounded-card border p-3 flex items-center justify-between gap-2 shadow-card transition-all duration-150',
+            'min-h-[86px] rounded-card border p-3 flex items-center justify-between gap-2 shadow-card transition-all duration-150',
             tile.bgClass
           )}
         >
           {/* Left stats column */}
           <div className="flex flex-col justify-between h-full min-w-0 flex-1">
             <span
+              title={tile.label}
               className={cn(
-                'text-[11px] font-medium tracking-tight truncate',
+                'text-[11px] font-medium tracking-tight whitespace-nowrap truncate',
                 tile.isRevenue ? 'text-primaryText/90' : 'text-muted'
               )}
             >
@@ -132,11 +133,11 @@ export const StatStrip: React.FC<StatStripProps> = ({
             {isLoading ? (
               <Skeleton className="h-2.5 w-16 mt-1" />
             ) : (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
                 {renderDelta(tile.delta, tile.isRevenue)}
                 <span
                   className={cn(
-                    'text-[10px] leading-none truncate',
+                    'text-[10px] leading-none whitespace-nowrap truncate',
                     tile.isRevenue ? 'text-primaryText' : 'text-muted'
                   )}
                 >

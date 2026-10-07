@@ -28,23 +28,64 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+let activeRequestCount = 0;
+let activeMutationCount = 0;
+
+const broadcastApiState = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('sims:api-active', {
+        detail: {
+          activeRequestCount,
+          activeMutationCount,
+        },
+      })
+    );
+  }
+};
+
 // Request interceptor: attach access token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    activeRequestCount++;
+    const method = (config.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+      activeMutationCount++;
+    }
+    broadcastApiState();
+
     const token = authStorage.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    activeRequestCount = Math.max(0, activeRequestCount - 1);
+    broadcastApiState();
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor: handle 401 & silent refresh
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    activeRequestCount = Math.max(0, activeRequestCount - 1);
+    const method = (response.config?.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+      activeMutationCount = Math.max(0, activeMutationCount - 1);
+    }
+    broadcastApiState();
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    activeRequestCount = Math.max(0, activeRequestCount - 1);
+    const method = (originalRequest?.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+      activeMutationCount = Math.max(0, activeMutationCount - 1);
+    }
+    broadcastApiState();
 
     if (!originalRequest) {
       return Promise.reject(error);

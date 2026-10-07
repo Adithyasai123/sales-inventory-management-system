@@ -23,6 +23,7 @@ export function useCreateRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['roles', 'create'],
     mutationFn: (payload: RoleCreatePayload) => rolesApi.create(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
@@ -38,6 +39,7 @@ export function useUpdateRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['roles', 'update'],
     mutationFn: ({ id, payload }: { id: number; payload: RoleUpdatePayload }) =>
       rolesApi.update(id, payload),
     onSuccess: (data) => {
@@ -55,6 +57,7 @@ export function useDeleteRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['roles', 'delete'],
     mutationFn: (id: number) => rolesApi.delete(id),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });

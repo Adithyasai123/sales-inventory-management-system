@@ -33,6 +33,7 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     is_super_admin = Column(Boolean, default=False, nullable=False)
     manager_id = Column(Integer, nullable=True)
     created_by_id = Column(Integer, nullable=True)
+    branch = Column(String(100), nullable=True, default="Hyderabad")
     _allowed_screens = Column("allowed_screens", String(500), nullable=True, default="dashboard,orders,products,customers,inventory")
 
     # Relationships

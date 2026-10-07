@@ -31,6 +31,7 @@ export function useCreateOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['orders', 'create'],
     mutationFn: (payload: CreateOrderPayload) => ordersApi.create(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -52,6 +53,7 @@ export function useCancelOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['orders', 'cancel'],
     mutationFn: (id: number) => ordersApi.cancel(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });

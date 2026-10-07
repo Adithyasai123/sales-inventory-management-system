@@ -80,10 +80,32 @@ export function formatCompactCurrency(value: number | string | undefined | null,
   }).format(num);
 }
 
+export function parseDateSafe(dateString: string | undefined | null): Date | null {
+  if (!dateString) return null;
+  let str = String(dateString).trim();
+  if (!str) return null;
+
+  // Replace space with 'T' if format is "YYYY-MM-DD HH:mm:ss"
+  if (str.includes(' ') && !str.includes('T')) {
+    str = str.replace(' ', 'T');
+  }
+
+  // If no timezone offset is specified (no 'Z' and no +/-HH:mm or +/-HHmm),
+  // assume UTC ('Z') because the database and backend generate all timestamps in UTC.
+  // Without 'Z', JavaScript interprets ISO strings as local time, causing timezone shifts (e.g. -5h30m in IST).
+  if (!str.endsWith('Z') && !/[+-]\d{2}(:?\d{2})?$/.test(str)) {
+    str = `${str}Z`;
+  }
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function formatDate(dateString: string | undefined | null): string {
   if (!dateString) return '-';
   try {
-    const d = new Date(dateString);
+    const d = parseDateSafe(dateString);
+    if (!d) return String(dateString);
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
@@ -93,17 +115,22 @@ export function formatDate(dateString: string | undefined | null): string {
       hour12: true,
     }).format(d);
   } catch {
-    return dateString;
+    return String(dateString);
   }
 }
 
 export function formatDateShort(dateString: string | undefined | null): string {
   if (!dateString) return '-';
   try {
-    const d = new Date(dateString);
-    return d.toISOString().split('T')[0];
+    const d = parseDateSafe(dateString);
+    if (!d) return String(dateString);
+    return new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
   } catch {
-    return dateString;
+    return String(dateString);
   }
 }
 

@@ -26,6 +26,7 @@ export function useUpdateThreshold() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['settings', 'update'],
     mutationFn: (payload: ThresholdUpdatePayload) => settingsApi.updateThreshold(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });

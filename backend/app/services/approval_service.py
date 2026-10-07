@@ -67,6 +67,18 @@ class ApprovalService:
         if order.creator_id == approver.id:
             raise SelfApprovalException()
 
+        # 5b. Circle / Branch Authorization: Each circle has designated manager only
+        if approver.role in [UserRole.MANAGER, "MANAGER"] and not approver.is_super_admin:
+            creator = order.creator
+            creator_branch = getattr(creator, "branch", None) if creator else None
+            approver_branch = getattr(approver, "branch", None)
+            is_direct_report = creator and creator.manager_id == approver.id
+            is_same_circle = bool(creator_branch and approver_branch and creator_branch.lower() == approver_branch.lower())
+            if creator_branch and approver_branch and not (is_direct_report or is_same_circle):
+                raise PermissionDeniedException(
+                    f"Circle authority restriction: Only the {creator_branch} circle manager can approve this order."
+                )
+
         # 6. Branch on Decision
         if action.decision == ApprovalDecision.APPROVED:
             # Execute in one single atomic transaction:
@@ -166,6 +178,7 @@ class ApprovalService:
                 decision=action.decision.value,
                 comment=action.comment,
                 total_amount=order.total_amount,
+                customer_name=order.customer.name if order.customer else None,
             )
 
         self.db.commit()

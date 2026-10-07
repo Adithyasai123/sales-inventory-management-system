@@ -6,7 +6,15 @@ import { InventoryMovement, LowStockAlert, MovementType } from '../../types/inve
 import { formatDate } from '../../lib/utils';
 import { Layers, AlertTriangle, ArrowDownRight, ArrowUpRight, RefreshCw, Download } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { SearchableSelect, SelectOption } from '../../components/ui/SearchableSelect';
 import { inventoryApi } from '../../api';
+
+const MOVEMENT_FILTER_OPTIONS: SelectOption[] = [
+  { value: '', label: 'All Movement Types' },
+  { value: 'IN', label: 'IN (Restock)', badge: 'IN', badgeColor: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
+  { value: 'OUT', label: 'OUT (Fulfillment)', badge: 'OUT', badgeColor: 'bg-blue-500/10 text-blue-600 border border-blue-500/20' },
+  { value: 'ADJUST', label: 'ADJUST (Audit)', badge: 'ADJUST', badgeColor: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
+];
 
 export const InventoryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'movements' | 'low-stock'>('movements');
@@ -224,19 +232,19 @@ export const InventoryPage: React.FC = () => {
           isLoading={isLoadingMovements}
           onPageChange={setPage}
           filters={
-            <select
-              value={movementFilter}
-              onChange={(e) => {
-                setMovementFilter(e.target.value as any);
-                setPage(1);
-              }}
-              className="px-3 py-1.5 rounded-full text-caption border border-border bg-surface text-text focus:outline-none focus:ring-1 focus:ring-chart1"
-            >
-              <option value="">All Movement Types</option>
-              <option value="IN">IN (Warehouse Restock)</option>
-              <option value="OUT">OUT (Order Fulfillment)</option>
-              <option value="ADJUST">ADJUST (Inventory Audit)</option>
-            </select>
+            <div className="w-56">
+              <SearchableSelect
+                size="sm"
+                value={movementFilter}
+                onChange={(val) => {
+                  setMovementFilter((val as MovementType) || '');
+                  setPage(1);
+                }}
+                options={MOVEMENT_FILTER_OPTIONS}
+                placeholder="All Movement Types"
+                minSearchCount={10}
+              />
+            </div>
           }
         />
       ) : (

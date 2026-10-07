@@ -5,6 +5,7 @@ import { useRoles } from '../../hooks/useRoles';
 import { useAuth } from '../../context/AuthContext';
 import { User, UserRole, Role } from '../../types/auth';
 import { RolesTab } from './RolesTab';
+import { OrgHierarchyTab } from './OrgHierarchyTab';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Button } from '../../components/ui/Button';
@@ -37,6 +38,8 @@ import {
   UserPlus,
   Activity,
   Database,
+  GitFork,
+  MapPin,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -109,9 +112,16 @@ const getDefaultScreensForRole = (role: UserRole) => {
   return DEFAULT_SALES_SCREENS;
 };
 
+const CIRCLE_OPTIONS: SelectOption[] = [
+  { value: 'Hyderabad', label: 'Hyderabad Circle', description: 'South hub • Managed by Adithya', icon: MapPin },
+  { value: 'Bangalore', label: 'Bangalore Circle', description: 'Karnataka tech hub • Managed by Priya', icon: MapPin },
+  { value: 'Mumbai', label: 'Mumbai Circle', description: 'West financial hub • Managed by Vikram', icon: MapPin },
+  { value: 'Delhi', label: 'Delhi Circle', description: 'North NCR hub • Managed by System Admin', icon: MapPin },
+];
+
 export const UsersPage: React.FC = () => {
   const { user: currentUser, isSuperAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'hierarchy'>('users');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
@@ -139,6 +149,7 @@ export const UsersPage: React.FC = () => {
     role: 'SALES' as UserRole,
     role_id: undefined as number | undefined,
     manager_id: undefined as number | undefined,
+    branch: 'Hyderabad',
     is_active: true,
     allowed_screens: [...DEFAULT_SALES_SCREENS],
   });
@@ -152,6 +163,7 @@ export const UsersPage: React.FC = () => {
     role: 'SALES' as UserRole,
     role_id: undefined as number | undefined,
     manager_id: undefined as number | undefined,
+    branch: 'Hyderabad',
     password: '', // optional password update
     is_active: true,
     allowed_screens: [] as string[],
@@ -166,19 +178,39 @@ export const UsersPage: React.FC = () => {
     newStatus: boolean;
   } | null>(null);
 
-  // Available Managers for Super Admin assignment
+  // Available Managers & Team Leads for assignment
   const managerOptions = useMemo<SelectOption[]>(() => {
     if (!data?.items) return [];
-    const mgrs = data.items.filter((u) => u.role === 'MANAGER' || u.is_super_admin);
-    return mgrs.map((m) => ({
-      value: m.id,
-      label: m.full_name,
-      description: m.is_super_admin ? 'Super Admin' : `Manager • ${m.email}`,
-      badge: m.is_super_admin ? 'Super Admin' : 'Manager',
-      badgeColor: m.is_super_admin ? 'bg-purple-500/10 text-purple-600' : 'bg-blue-500/10 text-blue-600',
-      icon: Briefcase,
-    }));
-  }, [data?.items]);
+    const eligible = data.items.filter((u) => {
+      if (u.is_super_admin) return true;
+      if (u.role === 'MANAGER' || u.role === 'ADMIN') return true;
+      if (u.direct_reports_count && u.direct_reports_count > 0) return true;
+      if (u.full_name.toLowerCase().includes('lead')) return true;
+      if (currentUser && !isSuperAdmin && u.branch === currentUser.branch) return true;
+      return false;
+    });
+
+    return eligible.map((m) => {
+      const isLead = m.full_name.toLowerCase().includes('lead') || (m.role === 'SALES' && (m.direct_reports_count ?? 0) > 0);
+      const badgeText = m.is_super_admin ? 'Super Admin' : m.role === 'MANAGER' ? 'Manager' : isLead ? 'Team Lead' : m.role;
+      const badgeColor = m.is_super_admin
+        ? 'bg-purple-500/10 text-purple-600'
+        : m.role === 'MANAGER'
+        ? 'bg-blue-500/10 text-blue-600'
+        : isLead
+        ? 'bg-emerald-500/10 text-emerald-600'
+        : 'bg-surfaceAlt text-text';
+
+      return {
+        value: m.id,
+        label: m.full_name,
+        description: `${m.email} • ${m.branch || 'Headquarters'} Circle`,
+        badge: badgeText,
+        badgeColor,
+        icon: Briefcase,
+      };
+    });
+  }, [data?.items, isSuperAdmin, currentUser]);
 
   // Role select options dynamically populated from SQL database
   const roleSelectOptions = useMemo<SelectOption[]>(() => {
@@ -291,6 +323,7 @@ export const UsersPage: React.FC = () => {
       role: 'SALES',
       role_id: salesDbRole?.id,
       manager_id: isSuperAdmin ? undefined : currentUser?.id,
+      branch: currentUser?.branch || 'Hyderabad',
       is_active: true,
       allowed_screens: salesDbRole?.allowed_screens?.length ? [...salesDbRole.allowed_screens] : [...DEFAULT_SALES_SCREENS],
     });
@@ -307,6 +340,7 @@ export const UsersPage: React.FC = () => {
       role: u.role,
       role_id: u.role_id || dbRole?.id,
       manager_id: u.manager_id || undefined,
+      branch: u.branch || 'Hyderabad',
       password: '',
       is_active: u.is_active,
       allowed_screens:
@@ -344,6 +378,7 @@ export const UsersPage: React.FC = () => {
       role: createForm.role,
       role_id: createForm.role_id || dbRole?.id,
       manager_id: createForm.manager_id || currentUser?.id,
+      branch: createForm.branch || 'Hyderabad',
       is_active: createForm.is_active,
       allowed_screens: finalScreens,
     });
@@ -374,6 +409,7 @@ export const UsersPage: React.FC = () => {
       role: editForm.role,
       role_id: editForm.role_id || dbRole?.id,
       manager_id: isSuperAdmin ? editForm.manager_id : editingUser.manager_id,
+      branch: editForm.branch || 'Hyderabad',
       is_active: editForm.is_active,
       allowed_screens: finalScreens,
     };
@@ -486,6 +522,28 @@ export const UsersPage: React.FC = () => {
           </span>
         );
       },
+    },
+    {
+      key: 'branch',
+      header: 'Circle & Reporting RM',
+      width: '210px',
+      render: (u) => (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-text">
+            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span>{u.branch || 'Hyderabad'} Circle</span>
+          </div>
+          <span className="text-[11px] text-muted truncate mt-0.5">
+            {u.is_super_admin
+              ? 'Top Level Executive (Board)'
+              : u.manager_name
+              ? `Reports to: ${u.manager_name}`
+              : u.role === 'MANAGER'
+              ? `${u.direct_reports_count ?? 0} direct employees`
+              : 'Direct Team Member'}
+          </span>
+        </div>
+      ),
     },
     {
       key: 'allowed_screens',
@@ -624,8 +682,8 @@ export const UsersPage: React.FC = () => {
         title={isSuperAdmin ? 'User & Access Administration' : 'My Team & Access Management'}
         subtitle={
           isSuperAdmin
-            ? 'Enterprise RBAC: Provision team members, configure granular screen authorization, and manage dynamic SQL database roles.'
-            : 'Manage direct sales employees, configure screen permissions, and inspect assigned database capabilities.'
+            ? 'Enterprise Access Control: Provision team members, configure granular permissions, and manage role-based security policies.'
+            : 'Manage direct sales employees, configure screen permissions, and inspect assigned roles and capabilities.'
         }
         action={
           activeTab === 'users' ? (
@@ -649,7 +707,7 @@ export const UsersPage: React.FC = () => {
           className={cn(
             'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all',
             activeTab === 'users'
-              ? 'bg-accent text-white shadow-sm'
+              ? 'bg-accent text-accentText shadow-sm'
               : 'text-muted hover:text-text hover:bg-surfaceAlt'
           )}
         >
@@ -658,7 +716,7 @@ export const UsersPage: React.FC = () => {
           <span
             className={cn(
               'ml-1 px-1.5 py-0.2 rounded-full text-[10px]',
-              activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-surfaceAlt text-muted'
+              activeTab === 'users' ? 'bg-accentText/20 text-accentText font-bold' : 'bg-surfaceAlt text-muted'
             )}
           >
             {data?.total ?? 0}
@@ -671,24 +729,48 @@ export const UsersPage: React.FC = () => {
           className={cn(
             'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all',
             activeTab === 'roles'
-              ? 'bg-accent text-white shadow-sm'
+              ? 'bg-accent text-accentText shadow-sm'
               : 'text-muted hover:text-text hover:bg-surfaceAlt'
           )}
         >
-          <Database className="w-4 h-4" />
-          <span>Dynamic SQL Roles &amp; RBAC</span>
+          <Shield className="w-4 h-4" />
+          <span>Roles &amp; Permissions</span>
           <span
             className={cn(
               'ml-1 px-1.5 py-0.2 rounded-full text-[10px]',
-              activeTab === 'roles' ? 'bg-white/20 text-white' : 'bg-surfaceAlt text-muted'
+              activeTab === 'roles' ? 'bg-accentText/20 text-accentText font-bold' : 'bg-surfaceAlt text-muted'
             )}
           >
             {rolesData?.length ?? 5}
           </span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('hierarchy')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all',
+            activeTab === 'hierarchy'
+              ? 'bg-accent text-accentText shadow-sm'
+              : 'text-muted hover:text-text hover:bg-surfaceAlt'
+          )}
+        >
+          <GitFork className="w-4 h-4" />
+          <span>Org Hierarchy Tree</span>
+          <span
+            className={cn(
+              'ml-1 px-1.5 py-0.2 rounded-full text-[10px]',
+              activeTab === 'hierarchy' ? 'bg-accentText/20 text-accentText font-bold' : 'bg-surfaceAlt text-muted'
+            )}
+          >
+            Tree
+          </span>
+        </button>
       </div>
 
-      {activeTab === 'roles' ? (
+      {activeTab === 'hierarchy' ? (
+        <OrgHierarchyTab isSuperAdmin={isSuperAdmin} />
+      ) : activeTab === 'roles' ? (
         <RolesTab isSuperAdmin={isSuperAdmin} />
       ) : (
         <>
@@ -846,20 +928,32 @@ export const UsersPage: React.FC = () => {
                 />
               </div>
 
-              {isSuperAdmin && ['SALES', 'WAREHOUSE', 'FINANCE'].includes(createForm.role) && (
+              {['SALES', 'WAREHOUSE', 'FINANCE'].includes(createForm.role) && managerOptions.length > 0 && (
                 <div>
                   <SearchableSelect
-                    label="Assign to Regional Manager"
-                    description="Allocate this employee to a specific Manager's team"
+                    label="Reporting Manager / Team Lead"
+                    description="Assign who this employee reports to in the organizational tree"
                     value={createForm.manager_id}
                     onChange={(val) => setCreateForm({ ...createForm, manager_id: val })}
                     options={managerOptions}
-                    placeholder="Select Manager..."
-                    searchPlaceholder="Search managers by name..."
+                    placeholder="Select Reporting Manager or Lead..."
+                    searchPlaceholder="Search managers or leads..."
                     minSearchCount={2}
                   />
                 </div>
               )}
+
+              <div>
+                <SearchableSelect
+                  label="Working Circle / Branch"
+                  description="Regional circle assignment for order approval authority"
+                  value={createForm.branch}
+                  onChange={(val) => setCreateForm({ ...createForm, branch: val })}
+                  options={CIRCLE_OPTIONS}
+                  placeholder="Select circle..."
+                  minSearchCount={10}
+                />
+              </div>
             </div>
           </div>
 
@@ -1112,19 +1206,32 @@ export const UsersPage: React.FC = () => {
                 />
               </div>
 
-              {isSuperAdmin && ['SALES', 'WAREHOUSE', 'FINANCE'].includes(editForm.role) && (
+              {['SALES', 'WAREHOUSE', 'FINANCE'].includes(editForm.role) && managerOptions.length > 0 && (
                 <div>
                   <SearchableSelect
-                    label="Assigned Regional Manager"
+                    label="Reporting Manager / Team Lead"
+                    description="Assign who this employee reports to in the organizational tree"
                     value={editForm.manager_id}
                     onChange={(val) => setEditForm({ ...editForm, manager_id: val })}
                     options={managerOptions}
-                    placeholder="Select Manager..."
-                    searchPlaceholder="Search managers by name..."
+                    placeholder="Select Reporting Manager or Lead..."
+                    searchPlaceholder="Search managers or leads..."
                     minSearchCount={2}
                   />
                 </div>
               )}
+
+              <div>
+                <SearchableSelect
+                  label="Working Circle / Branch"
+                  description="Regional circle assignment for order approval authority"
+                  value={editForm.branch}
+                  onChange={(val) => setEditForm({ ...editForm, branch: val })}
+                  options={CIRCLE_OPTIONS}
+                  placeholder="Select circle..."
+                  minSearchCount={10}
+                />
+              </div>
             </div>
           </div>
 

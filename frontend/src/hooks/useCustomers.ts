@@ -31,6 +31,7 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['customers', 'create'],
     mutationFn: (payload: CustomerInput) => customersApi.create(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -46,6 +47,7 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['customers', 'update'],
     mutationFn: ({ id, payload }: { id: number; payload: Partial<CustomerInput> }) =>
       customersApi.update(id, payload),
     onSuccess: (data) => {
@@ -63,6 +65,7 @@ export function useDeleteCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['customers', 'delete'],
     mutationFn: (id: number) => customersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -78,6 +81,7 @@ export function useRestoreCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['customers', 'restore'],
     mutationFn: (id: number) => customersApi.restore(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });

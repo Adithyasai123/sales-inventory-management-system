@@ -15,6 +15,7 @@ class UserCreate(BaseModel):
     role_id: Optional[int] = None
     is_active: Optional[bool] = True
     manager_id: Optional[int] = None
+    branch: Optional[str] = "Hyderabad"
     allowed_screens: Optional[List[str]] = None
 
     @field_validator("email")
@@ -39,6 +40,7 @@ class UserUpdate(BaseModel):
     role_id: Optional[int] = None
     is_active: Optional[bool] = None
     manager_id: Optional[int] = None
+    branch: Optional[str] = None
     allowed_screens: Optional[List[str]] = None
 
     @field_validator("email")
@@ -68,6 +70,9 @@ class UserResponse(BaseModel):
     is_active: bool
     is_super_admin: bool = False
     manager_id: Optional[int] = None
+    manager_name: Optional[str] = None
+    branch: Optional[str] = "Hyderabad"
+    direct_reports_count: Optional[int] = 0
     created_by_id: Optional[int] = None
     allowed_screens: List[str] = []
     is_deleted: bool = False
@@ -76,3 +81,17 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserHierarchyNode(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    role: str
+    branch: Optional[str] = "Hyderabad"
+    is_active: bool
+    is_super_admin: bool = False
+    manager_id: Optional[int] = None
+    manager_name: Optional[str] = None
+    direct_reports: List["UserHierarchyNode"] = []
+    orders_count: Optional[int] = 0

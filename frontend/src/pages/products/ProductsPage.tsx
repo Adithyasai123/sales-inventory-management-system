@@ -14,8 +14,23 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { Button } from '../../components/ui/Button';
 import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { SearchableSelect, SelectOption } from '../../components/ui/SearchableSelect';
 import { formatCurrency } from '../../lib/utils';
 import { Plus, SlidersHorizontal, Trash2, Edit3, AlertTriangle, Layers, RotateCcw } from 'lucide-react';
+
+const PRODUCT_CATEGORY_OPTIONS: SelectOption[] = [
+  { value: '', label: 'All Categories' },
+  { value: 'SMARTPHONE', label: 'Smartphones', badge: 'Phones' },
+  { value: 'TABLET', label: 'Tablets', badge: 'Pads' },
+  { value: 'LAPTOP', label: 'Laptops', badge: 'PCs' },
+  { value: 'ACCESSORIES', label: 'Accessories', badge: 'Gear' },
+];
+
+const ADJUSTMENT_TYPE_OPTIONS: SelectOption[] = [
+  { value: 'IN', label: 'IN — Restock / Supplier Shipment', badge: 'Restock', badgeColor: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
+  { value: 'OUT', label: 'OUT — Damage / Shrinkage Write-off', badge: 'Write-off', badgeColor: 'bg-rose-500/10 text-rose-600 border border-rose-500/20' },
+  { value: 'ADJUST', label: 'ADJUST — Physical Audit Count', badge: 'Audit', badgeColor: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
+];
 
 export const ProductsPage: React.FC = () => {
   const { isManager, isWarehouse } = useAuth();
@@ -323,9 +338,22 @@ export const ProductsPage: React.FC = () => {
         }}
         filters={
           <div className="flex items-center gap-2">
+            <div className="w-48">
+              <SearchableSelect
+                size="sm"
+                value={category}
+                onChange={(val) => {
+                  setCategory(val || '');
+                  setPage(1);
+                }}
+                options={PRODUCT_CATEGORY_OPTIONS}
+                placeholder="All Categories"
+                minSearchCount={10}
+              />
+            </div>
             <button
               onClick={() => setIsLowStock(isLowStock ? undefined : true)}
-              className={`px-3 py-1.5 rounded-full text-caption border transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-caption border transition-colors ${
                 isLowStock
                   ? 'bg-primary text-primaryText border-primary/40'
                   : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
@@ -338,7 +366,7 @@ export const ProductsPage: React.FC = () => {
                 setIncludeDeleted(!includeDeleted);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-full text-caption border transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-caption border transition-colors ${
                 includeDeleted
                   ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
                   : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
@@ -481,21 +509,21 @@ export const ProductsPage: React.FC = () => {
         isLoading={adjustStockMutation.isPending}
       >
         <div className="flex flex-col gap-3 mt-2">
-          <FormField label="Adjustment Type" required>
-            <Select
+          <div>
+            <SearchableSelect
+              label="Adjustment Type"
+              required
               value={adjustData.movement_type}
-              onChange={(e) =>
+              onChange={(val) =>
                 setAdjustData({
                   ...adjustData,
-                  movement_type: e.target.value as 'IN' | 'OUT' | 'ADJUST',
+                  movement_type: val as 'IN' | 'OUT' | 'ADJUST',
                 })
               }
-            >
-              <option value="IN">IN — Restock / Supplier Shipment</option>
-              <option value="OUT">OUT — Damage / Shrinkage Write-off</option>
-              <option value="ADJUST">ADJUST — Physical Audit Count</option>
-            </Select>
-          </FormField>
+              options={ADJUSTMENT_TYPE_OPTIONS}
+              minSearchCount={10}
+            />
+          </div>
 
           <FormField label="Quantity" required>
             <Input

@@ -1,29 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8">
-    <title>Order Status Update</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>Sales Order Status Update</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            supported-color-schemes: light dark;
+        }
+        @media (prefers-color-scheme: dark) {
+            body, .body-bg {
+                background-color: #090d16 !important;
+            }
+            .card-bg {
+                background-color: #121927 !important;
+                border-color: #1e293b !important;
+            }
+            .inner-box {
+                background-color: #0d1320 !important;
+                border-color: #1e293b !important;
+            }
+            .title-text {
+                color: #f8fafc !important;
+            }
+            .body-text {
+                color: #cbd5e1 !important;
+            }
+            .sub-text {
+                color: #94a3b8 !important;
+            }
+            .divider {
+                border-color: #1e293b !important;
+            }
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #E9F6F0; padding: 24px; color: #0F2E2A;">
-    <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #CFE7DC; padding: 32px;">
-        <h2 style="color: #0F2E2A; margin-top: 0;">Order Status Update</h2>
-        <p>Hello {{ creator_name }},</p>
-        <p>Your sales order <strong>{{ order_number }}</strong> ({{ formatted_amount }}) has been reviewed by management:</p>
-        
-        <div style="background: #F1FAF6; border-left: 4px solid {{ decision_color }}; border-radius: 8px; padding: 16px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 16px;">Decision: <strong style="color: {{ decision_color }};">{{ decision }}</strong></p>
-            <p style="margin: 8px 0 0 0; color: #5B7A73; font-style: italic;">Manager Comment: &ldquo;{{ comment }}&rdquo;</p>
-        </div>
-
-        {% if decision == 'APPROVED' %}
-        <p>The inventory has been deducted from warehouse stock, stock reservation released, and the order is marked as <strong>COMPLETED</strong>.</p>
-        {% else %}
-        <p>The order has been <strong>REJECTED</strong>. The reserved inventory has been released and returned to available stock.</p>
-        {% endif %}
-
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #CFE7DC; font-size: 12px; color: #5B7A73;">
-            This is an automated system notification from SIMS.
-        </div>
+<body class="body-bg" style="margin: 0; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #0f172a; -webkit-font-smoothing: antialiased;">
+    
+    <!-- Preheader Hidden Preview Text -->
+    <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f1f5f9; opacity: 0;">
+        Order {{ order_number }} ({{ formatted_amount }}) has been {{ decision }} by management.
+        &#847; &zwnj; &nbsp; &#8199; &#65279; &#847; &zwnj; &nbsp; &#8199; &#65279;
     </div>
+
+    <!-- Main Container Card -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 620px; margin: 0 auto;">
+        <tr>
+            <td>
+                <div class="card-bg" style="background-color: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header Branding -->
+                    <div style="padding: 24px 28px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid {% if decision == 'APPROVED' %}#10b981{% else %}#ef4444{% endif %};">
+                        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td>
+                                    <span style="font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">SIMS</span>
+                                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: {% if decision == 'APPROVED' %}#10b981{% else %}#ef4444{% endif %}; margin-left: 4px; vertical-align: middle;"></span>
+                                    <div style="font-size: 12px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">Sales &amp; Inventory Management System</div>
+                                </td>
+                                <td align="right">
+                                    <span style="background-color: {{ decision_badge_bg }}; border: 1px solid {{ decision_badge_border }}; color: {{ decision_color }}; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        {{ decision }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Body Content -->
+                    <div style="padding: 28px;">
+                        
+                        <h1 class="title-text" style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
+                            Sales Order {{ decision|capitalize }}
+                        </h1>
+                        <p class="body-text" style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+                            Hello <strong>{{ creator_name }}</strong>, your sales order <strong>{{ order_number }}</strong> has been reviewed by management.
+                        </p>
+
+                        <!-- Decision Banner Box -->
+                        <div style="background-color: {{ decision_badge_bg }}; border-left: 4px solid {{ decision_color }}; border-radius: 10px; padding: 18px 20px; margin-bottom: 24px;">
+                            <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; color: {{ decision_color }}; letter-spacing: 0.5px;">
+                                Manager Review Decision
+                            </div>
+                            <div style="font-size: 16px; font-weight: 800; color: {{ decision_color }}; margin-top: 2px;">
+                                {{ decision }}
+                            </div>
+                            <div style="margin-top: 10px; font-size: 13px; color: #334155; line-height: 1.5; font-style: italic;">
+                                &ldquo;{{ comment }}&rdquo;
+                            </div>
+                        </div>
+
+                        <!-- Key Order Details -->
+                        <div class="inner-box" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td width="50%" style="padding-bottom: 12px; vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Order Number</div>
+                                        <div class="title-text" style="font-size: 14px; font-weight: 700; font-family: ui-monospace, monospace; color: #2563eb; margin-top: 2px;">{{ order_number }}</div>
+                                    </td>
+                                    <td width="50%" style="padding-bottom: 12px; vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Total Amount</div>
+                                        <div class="title-text" style="font-size: 16px; font-weight: 800; font-family: monospace; color: #0f172a; margin-top: 2px;">{{ formatted_amount }}</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" style="vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Customer</div>
+                                        <div class="body-text" style="font-size: 13px; font-weight: 500; color: #1e293b; margin-top: 2px;">{{ customer_name }}</div>
+                                    </td>
+                                    <td width="50%" style="vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Reviewed At</div>
+                                        <div class="body-text" style="font-size: 13px; font-weight: 500; color: #1e293b; margin-top: 2px;">{{ date }}</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Operational Status Explanation -->
+                        <div class="body-text" style="font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 24px;">
+                            {% if decision == 'APPROVED' %}
+                            <p style="margin: 0;">&#10004; Stock reservation has been cleared and inventory deducted from available warehouse balance. The order is now <strong>COMPLETED</strong>.</p>
+                            {% else %}
+                            <p style="margin: 0;">&#10008; Stock reservation has been released back into available inventory. The order has been marked as <strong>CANCELLED / REJECTED</strong>.</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Button -->
+                        <div style="text-align: center; margin: 28px 0 16px 0;">
+                            <a href="{{ orders_url }}" target="_blank" style="background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);">
+                                View Order in SIMS &rarr;
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="divider" style="padding: 20px 28px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                        <p class="sub-text" style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                            This is an automated operational notification dispatched to authorized personnel.<br>
+                            Sales &amp; Inventory Management System (SIMS) &bull; Enterprise Operations
+                        </p>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
 </body>
 </html>
