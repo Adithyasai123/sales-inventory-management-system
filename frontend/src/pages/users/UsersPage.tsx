@@ -338,6 +338,7 @@ export const UsersPage: React.FC = () => {
     {
       key: 'full_name',
       header: 'User & Email',
+      width: '280px',
       render: (u) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center shrink-0">
@@ -360,6 +361,7 @@ export const UsersPage: React.FC = () => {
     {
       key: 'role',
       header: 'Assigned Role',
+      width: '150px',
       render: (u) => (
         <span
           className={cn(
@@ -381,6 +383,7 @@ export const UsersPage: React.FC = () => {
     {
       key: 'allowed_screens',
       header: 'Screen Permissions',
+      width: '300px',
       render: (u) => {
         if (u.is_super_admin || u.role === 'MANAGER') {
           return (
@@ -433,34 +436,9 @@ export const UsersPage: React.FC = () => {
       },
     },
     {
-      key: 'actions',
-      header: 'Actions',
-      render: (u) => {
-        return (
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => handleOpenEdit(u)}
-              className="p-1.5 rounded-lg hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-              title="Edit User in Drawer"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            {!u.is_super_admin && (
-              <button
-                onClick={() => setDeletingUser(u)}
-                className="p-1.5 rounded-lg hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
-                title="Deactivate User"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        );
-      },
-    },
-    {
       key: 'status',
       header: 'Active Status',
+      width: '140px',
       render: (u) => {
         // Prevent deactivating the only super admin
         const isSelfSuperAdmin = u.is_super_admin;
@@ -500,6 +478,33 @@ export const UsersPage: React.FC = () => {
             >
               {u.is_active ? 'Active' : 'Inactive'}
             </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: '100px',
+      render: (u) => {
+        return (
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => handleOpenEdit(u)}
+              className="p-1.5 rounded-lg hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+              title="Edit User in Drawer"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            {!u.is_super_admin && (
+              <button
+                onClick={() => setDeletingUser(u)}
+                className="p-1.5 rounded-lg hover:bg-dangerSoft text-muted hover:text-danger transition-colors"
+                title="Deactivate User"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         );
       },

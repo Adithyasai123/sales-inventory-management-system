@@ -118,11 +118,13 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'sku',
       header: 'SKU',
-      className: 'font-mono text-[11px] text-body ',
+      width: '140px',
+      className: 'font-mono text-[11px] text-body',
     },
     {
       key: 'name',
       header: 'Name',
+      width: '280px',
       render: (p) => (
         <div>
           <span className="text-body block">{p.name}</span>
@@ -137,6 +139,7 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'category',
       header: 'Category',
+      width: '140px',
       render: (p) => (
         <span className="px-2 py-0.5 rounded-full bg-surfaceAlt text-muted text-[11px] border border-border">
           {p.category || 'General'}
@@ -146,12 +149,14 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'price',
       header: 'Unit Price',
-      className: 'tabular-nums text-body ',
+      width: '140px',
+      className: 'tabular-nums text-body',
       render: (p) => formatCurrency(p.price),
     },
     {
       key: 'stock_quantity',
       header: 'Available Stock',
+      width: '240px',
       render: (p) => {
         const isLow = p.stock_quantity <= p.reorder_level;
         return (
@@ -192,6 +197,7 @@ export const ProductsPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
+      width: '120px',
       render: (p) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {isManager && (

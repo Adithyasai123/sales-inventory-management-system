@@ -19,6 +19,12 @@ export interface Column<T> {
   header: string;
   sortable?: boolean;
   className?: string;
+  width?: string | number;
+  minWidth?: string | number;
+  maxWidth?: string | number;
+  align?: 'left' | 'center' | 'right';
+  skeletonType?: 'text' | 'badge' | 'actions' | 'number' | 'date' | 'mono';
+  skeletonRender?: (rowIndex: number) => React.ReactNode;
   render?: (item: T) => React.ReactNode;
 }
 
@@ -45,6 +51,7 @@ interface DataTableProps<T> {
   onRowClick?: (item: T) => void;
   filters?: React.ReactNode;
   leftContent?: React.ReactNode;
+  tableLayout?: 'auto' | 'fixed';
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -70,6 +77,7 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   filters,
   leftContent,
+  tableLayout,
 }: DataTableProps<T>) {
   const isSearching = Boolean(searchValue && searchValue.trim().length > 0);
   const resolvedAnimation: string =
@@ -85,6 +93,24 @@ export function DataTable<T extends Record<string, any>>({
     emptyActionLabel || (isSearching && onSearchChange ? 'Clear search' : undefined);
   const resolvedOnAction =
     onEmptyAction || (isSearching && onSearchChange ? () => onSearchChange('') : undefined);
+
+  // Column width style helper
+  const getColStyle = (col: Column<T>): React.CSSProperties => {
+    const style: React.CSSProperties = {};
+    if (col.width !== undefined) {
+      style.width = typeof col.width === 'number' ? `${col.width}px` : col.width;
+    }
+    if (col.minWidth !== undefined) {
+      style.minWidth = typeof col.minWidth === 'number' ? `${col.minWidth}px` : col.minWidth;
+    }
+    if (col.maxWidth !== undefined) {
+      style.maxWidth = typeof col.maxWidth === 'number' ? `${col.maxWidth}px` : col.maxWidth;
+    }
+    return style;
+  };
+
+  const hasColWidths = columns.some((c) => c.width !== undefined || c.minWidth !== undefined);
+  const isTableFixed = tableLayout === 'fixed' || (tableLayout !== 'auto' && hasColWidths);
 
   // Generate smart pagination page numbers
   const getPageNumbers = () => {
@@ -107,16 +133,109 @@ export function DataTable<T extends Record<string, any>>({
     return pages;
   };
 
-  // Realistic skeleton width variation
-  const getSkeletonWidth = (rowIndex: number, colIndex: number) => {
-    if (colIndex === columns.length - 1) return 'w-16 ml-auto';
-    if (colIndex === 0) return 'w-20';
-    const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-4/5', 'w-2/5', 'w-3/5'];
-    const idx = (rowIndex * 3 + colIndex) % widths.length;
-    return widths[idx];
-  };
+  const skeletonRowCount = pageSize ? Math.min(pageSize, 10) : 8;
 
-  const skeletonRowCount = Math.min(pageSize || 8, 8);
+  // Smart contextual skeleton renderer per column
+  const renderSkeletonCell = (col: Column<T>, rIdx: number) => {
+    if (col.skeletonRender) {
+      return col.skeletonRender(rIdx);
+    }
+
+    const key = col.key.toLowerCase();
+    const header = col.header.toLowerCase();
+    const type = col.skeletonType;
+    const isRight = col.align === 'right' || col.className?.includes('text-right');
+    const isCenter = col.align === 'center' || col.className?.includes('text-center');
+
+    // 1. Actions / Inspect column
+    if (type === 'actions' || key === 'actions' || header.includes('action') || header.includes('inspect')) {
+      return (
+        <div className={cn('flex items-center gap-1.5', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+          <Skeleton className="w-7 h-7 rounded-full shrink-0" />
+          <Skeleton className="w-7 h-7 rounded-full shrink-0" />
+        </div>
+      );
+    }
+
+    // 2. Status badge column
+    if (type === 'badge' || key === 'status' || header.includes('status')) {
+      return (
+        <div className={cn('flex items-center', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+          <Skeleton className="h-6 w-24 rounded-full shrink-0" />
+        </div>
+      );
+    }
+
+    // 3. Currency / numeric / price / quantity
+    if (
+      type === 'number' ||
+      key.includes('amount') ||
+      key.includes('price') ||
+      key.includes('total') ||
+      key.includes('rate') ||
+      key.includes('qty') ||
+      key.includes('quantity') ||
+      key.includes('stock') ||
+      key.includes('balance') ||
+      header.includes('amount') ||
+      header.includes('price') ||
+      header.includes('value') ||
+      header.includes('qty') ||
+      header.includes('quantity') ||
+      header.includes('stock')
+    ) {
+      return (
+        <div className={cn('flex', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+          <Skeleton className="h-4 w-20 rounded-sm tabular-nums" />
+        </div>
+      );
+    }
+
+    // 4. Date / timestamp
+    if (
+      type === 'date' ||
+      key.includes('date') ||
+      key.includes('time') ||
+      key.includes('created_at') ||
+      key.includes('updated_at') ||
+      header.includes('date') ||
+      header.includes('time') ||
+      header.includes('submitted') ||
+      header.includes('timestamp')
+    ) {
+      return (
+        <div className={cn('flex', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+          <Skeleton className="h-3.5 w-28 rounded-sm" />
+        </div>
+      );
+    }
+
+    // 5. Code / SKU / Order Number / ID
+    if (
+      type === 'mono' ||
+      key === 'order_number' ||
+      key === 'sku' ||
+      key === 'product_sku' ||
+      key.includes('code') ||
+      header.includes('sku') ||
+      header.includes('order #')
+    ) {
+      return (
+        <div className={cn('flex', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+          <Skeleton className="h-4 w-32 rounded-sm font-mono" />
+        </div>
+      );
+    }
+
+    // 6. Name / Customer / User / Title (varying realistic lengths)
+    const textWidths = ['w-36', 'w-48', 'w-40', 'w-52', 'w-44'];
+    const widthClass = textWidths[(rIdx * 2 + columns.indexOf(col)) % textWidths.length];
+    return (
+      <div className={cn('flex', isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start')}>
+        <Skeleton className={cn('h-4 rounded-sm', widthClass)} />
+      </div>
+    );
+  };
 
   return (
     <div className="w-full bg-surface rounded-card border border-border shadow-card overflow-hidden flex flex-col">
@@ -125,7 +244,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="p-4 border-b border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surfaceAlt/50">
           <div className="flex items-center gap-3 flex-1">
             {leftContent && <div>{leftContent}</div>}
-            
+
             {onSearchChange && (
               <div className="relative flex-1 max-w-sm">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
@@ -146,7 +265,12 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Table Content */}
       <div className="overflow-x-auto w-full">
-        <table className="w-full text-left text-caption text-text border-collapse">
+        <table className={cn('w-full text-left text-caption text-text border-collapse', isTableFixed && 'table-fixed')}>
+          <colgroup>
+            {columns.map((col) => (
+              <col key={col.key} style={getColStyle(col)} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-surfaceAlt text-text">
               {columns.map((col) => {
@@ -154,6 +278,7 @@ export function DataTable<T extends Record<string, any>>({
                 return (
                   <th
                     key={col.key}
+                    style={getColStyle(col)}
                     className={cn(
                       'px-4 py-3 select-none text-label',
                       col.sortable && 'cursor-pointer hover:text-text',
@@ -184,12 +309,11 @@ export function DataTable<T extends Record<string, any>>({
           </thead>
           <tbody className="divide-y divide-border/60">
             {isLoading ? (
-              /* 15 Skeleton Loader Rows */
               Array.from({ length: skeletonRowCount }).map((_, rIdx) => (
                 <tr key={`skel-row-${rIdx}`} className="hover:bg-transparent">
                   {columns.map((col, cIdx) => (
-                    <td key={`skel-col-${cIdx}`} className={cn('px-4 py-3.5', col.className)}>
-                      <Skeleton className={cn('h-4 rounded-sm', getSkeletonWidth(rIdx, cIdx))} />
+                    <td key={`skel-col-${cIdx}`} style={getColStyle(col)} className={cn('px-4 py-3.5', col.className)}>
+                      {renderSkeletonCell(col, rIdx)}
                     </td>
                   ))}
                 </tr>
@@ -218,7 +342,7 @@ export function DataTable<T extends Record<string, any>>({
                   )}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className={cn('px-4 py-3', col.className)}>
+                    <td key={col.key} style={getColStyle(col)} className={cn('px-4 py-3', col.className)}>
                       {col.render
                         ? col.render(item)
                         : (item as any)[col.key] !== undefined && (item as any)[col.key] !== null
@@ -238,24 +362,37 @@ export function DataTable<T extends Record<string, any>>({
         <div className="px-4 py-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-caption bg-surfaceAlt/40 select-none">
           {/* Records count & limit indicator */}
           <div className="flex items-center gap-2 text-muted text-caption">
-            <span>
-              Showing{' '}
-              <strong className="text-text tabular-nums">
-                {total === 0 ? 0 : (page - 1) * pageSize + 1}
-              </strong>{' '}
-              to{' '}
-              <strong className="text-text tabular-nums">
-                {Math.min(page * pageSize, total)}
-              </strong>{' '}
-              of <strong className="text-text tabular-nums">{total}</strong> records
-            </span>
-            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface border border-border text-[10px] font-mono text-muted">
-              {pageSize} / page
-            </span>
+            {isLoading ? (
+              <Skeleton className="h-4 w-44 rounded" />
+            ) : (
+              <>
+                <span>
+                  Showing{' '}
+                  <strong className="text-text tabular-nums">
+                    {total === 0 ? 0 : (page - 1) * pageSize + 1}
+                  </strong>{' '}
+                  to{' '}
+                  <strong className="text-text tabular-nums">
+                    {Math.min(page * pageSize, total)}
+                  </strong>{' '}
+                  of <strong className="text-text tabular-nums">{total}</strong> records
+                </span>
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface border border-border text-[10px] font-mono text-muted">
+                  {pageSize} / page
+                </span>
+              </>
+            )}
           </div>
 
           {/* Navigation Controls */}
-          {totalPages > 1 && (
+          {isLoading ? (
+            <div className="flex items-center gap-1">
+              <Skeleton className="h-7 w-7 rounded" />
+              <Skeleton className="h-7 w-7 rounded" />
+              <Skeleton className="h-7 w-12 rounded" />
+              <Skeleton className="h-7 w-7 rounded" />
+            </div>
+          ) : totalPages > 1 ? (
             <div className="flex items-center gap-1">
               {/* First Page */}
               <button
@@ -336,7 +473,7 @@ export function DataTable<T extends Record<string, any>>({
                 <ChevronsRight className="w-4 h-4" />
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

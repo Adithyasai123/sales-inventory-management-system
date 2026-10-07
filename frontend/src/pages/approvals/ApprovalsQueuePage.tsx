@@ -12,6 +12,7 @@ import { FormField, Textarea } from '../../components/ui/FormField';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { CheckCircle2, XCircle, Eye, ShieldCheck, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { OrderReviewDrawerSkeleton } from '../../components/orders/OrderReviewDrawerSkeleton';
 
 export const ApprovalsQueuePage: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -60,33 +61,39 @@ export const ApprovalsQueuePage: React.FC = () => {
     {
       key: 'order_number',
       header: 'Order #',
-      className: 'font-mono text-[11px] text-body ',
+      width: '160px',
+      className: 'font-mono text-[11px] text-body',
     },
     {
       key: 'customer_name',
       header: 'Customer',
-      render: (o) => <span className="text-body">{o.customer_name}</span>,
+      width: '260px',
+      render: (o) => <span className="text-body font-medium">{o.customer_name}</span>,
     },
     {
       key: 'creator_name',
       header: 'Created By',
+      width: '140px',
       render: (o) => <span className="text-muted text-caption">{o.creator_name}</span>,
     },
     {
       key: 'total_amount',
       header: 'Order Value',
-      className: 'tabular-nums  text-body text-body ',
+      width: '140px',
+      className: 'tabular-nums text-body',
       render: (o) => formatCurrency(o.total_amount),
     },
     {
       key: 'created_at',
       header: 'Submitted',
+      width: '160px',
       className: 'text-muted text-[11px]',
       render: (o) => formatDate(o.created_at),
     },
     {
       key: 'actions',
       header: 'Review Actions',
+      width: '280px',
       render: (o) => (
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <Button
@@ -150,7 +157,7 @@ export const ApprovalsQueuePage: React.FC = () => {
         width="lg"
       >
         {isLoadingDetail || !orderDetail ? (
-          <div className="h-48 bg-primarySoft animate-pulse rounded-card" />
+          <OrderReviewDrawerSkeleton showActionsStrip={false} showApprovalTrail={false} showManagerActions={true} />
         ) : (
           <div className="flex flex-col gap-6">
             <div className="p-4 rounded-card bg-surfaceAlt border border-border flex items-center justify-between">
