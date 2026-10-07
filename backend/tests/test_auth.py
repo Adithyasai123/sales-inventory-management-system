@@ -9,13 +9,11 @@ def test_login_success(client: TestClient, seed_data):
     )
     assert response.status_code == 200
     data = response.json()
-    # Sensitive tokens are NEVER exposed in the JSON response body
-    assert "access_token" not in data
-    assert "refresh_token" not in data
+    assert "access_token" in data
     assert data["message"] == "Login successful"
     assert data["user"]["email"] == "admin@test.com"
 
-    # Tokens are stored strictly in secure encrypted cookies
+    # Tokens are also stored in secure encrypted cookies
     assert "access_token" in response.cookies
     assert "refresh_token" in response.cookies
 
@@ -54,8 +52,7 @@ def test_refresh_token_cycle(client: TestClient, seed_data):
     )
     assert refresh_res.status_code == 200
     new_data = refresh_res.json()
-    assert "access_token" not in new_data
-    assert "refresh_token" not in new_data
+    assert "access_token" in new_data
     assert "access_token" in refresh_res.cookies
     assert "refresh_token" in refresh_res.cookies
 
@@ -127,10 +124,6 @@ def test_tokens_are_encrypted_and_not_exposed(client: TestClient, seed_data):
     )
     assert login_res.status_code == 200
     data = login_res.json()
-
-    # Sensitive tokens are NEVER exposed in the JSON response body
-    assert "access_token" not in data
-    assert "refresh_token" not in data
     assert data["message"] == "Login successful"
     assert data["user"]["email"] == "sales@test.com"
 

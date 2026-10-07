@@ -27,7 +27,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Authenticate directly via browser's protected HttpOnly cookie
+        const token = authStorage.getAccessToken();
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
         const currentUser = await authApi.getMe();
         setUser(currentUser);
       } catch (error) {
@@ -54,8 +58,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const res = await authApi.login(payload);
-      // Clean up any legacy localStorage/unprotected tokens
-      authStorage.clearTokens();
+      if (res.access_token && res.refresh_token) {
+        authStorage.setTokens(res.access_token, res.refresh_token);
+      }
 
       if (res.user) {
         setUser(res.user);

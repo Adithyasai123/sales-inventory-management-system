@@ -90,11 +90,17 @@ export interface Tokens {
 
 export interface LoginResponse {
   message: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
   user?: User;
 }
 
 export interface RefreshResponse {
   message: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
 }
 
 export interface LoginPayload {

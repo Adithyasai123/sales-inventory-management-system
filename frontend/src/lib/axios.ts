@@ -49,7 +49,8 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     activeRequestCount++;
     const method = (config.method || 'get').toLowerCase();
-    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+    const isLogin = config.url?.includes('/auth/login');
+    if (!isLogin && ['post', 'put', 'patch', 'delete'].includes(method)) {
       activeMutationCount++;
     }
     broadcastApiState();
@@ -72,7 +73,8 @@ apiClient.interceptors.response.use(
   (response) => {
     activeRequestCount = Math.max(0, activeRequestCount - 1);
     const method = (response.config?.method || 'get').toLowerCase();
-    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+    const isLogin = response.config?.url?.includes('/auth/login');
+    if (!isLogin && ['post', 'put', 'patch', 'delete'].includes(method)) {
       activeMutationCount = Math.max(0, activeMutationCount - 1);
     }
     broadcastApiState();
@@ -82,7 +84,8 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     activeRequestCount = Math.max(0, activeRequestCount - 1);
     const method = (originalRequest?.method || 'get').toLowerCase();
-    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+    const isLogin = originalRequest?.url?.includes('/auth/login');
+    if (!isLogin && ['post', 'put', 'patch', 'delete'].includes(method)) {
       activeMutationCount = Math.max(0, activeMutationCount - 1);
     }
     broadcastApiState();
@@ -117,18 +120,25 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       const refreshToken = authStorage.getRefreshToken();
+      if (!refreshToken) {
+        authStorage.clearTokens();
+        return Promise.reject(error);
+      }
 
       try {
         const { data } = await axios.post(
           `${API_BASE}/api/v1/auth/refresh`,
-          refreshToken ? { refresh_token: refreshToken } : {},
+          { refresh_token: refreshToken },
           { withCredentials: true }
         );
 
         const newAccessToken = data?.access_token;
 
-        if (newAccessToken && originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        if (newAccessToken) {
+          authStorage.setTokens(newAccessToken, data.refresh_token || refreshToken);
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
         }
         processQueue(null, newAccessToken);
         return apiClient(originalRequest);

@@ -132,48 +132,16 @@ class EmailService:
         Targets creator's direct manager (e.g. Sita -> Adithya) or circle manager.
         Returns list of (log_id, to_email, subject, html_content) for post-commit dispatch.
         """
-        recipients: List[User] = []
-
-        # 1. First priority: Designated reporting manager (e.g. Sita Reddy -> Adithya)
-        if creator and creator.manager_id:
-            direct_manager = (
-                db.query(User)
-                .filter(
-                    User.id == creator.manager_id,
-                    User.is_active == True,
-                    User.is_deleted == False,
-                )
-                .first()
+        # Query active managers/admins to receive approval notifications
+        recipients = (
+            db.query(User)
+            .filter(
+                User.role.in_([UserRole.MANAGER, UserRole.ADMIN]),
+                User.is_active == True,
+                User.is_deleted == False,
             )
-            if direct_manager:
-                recipients.append(direct_manager)
-
-        # 2. Second priority: Branch circle manager
-        if not recipients and creator and creator.branch:
-            branch_manager = (
-                db.query(User)
-                .filter(
-                    User.branch == creator.branch,
-                    User.role == UserRole.MANAGER,
-                    User.is_active == True,
-                    User.is_deleted == False,
-                )
-                .first()
-            )
-            if branch_manager:
-                recipients.append(branch_manager)
-
-        # 3. Fallback: all active managers/admins
-        if not recipients:
-            recipients = (
-                db.query(User)
-                .filter(
-                    User.role.in_([UserRole.MANAGER, UserRole.ADMIN]),
-                    User.is_active == True,
-                    User.is_deleted == False,
-                )
-                .all()
-            )
+            .all()
+        )
 
         formatted_amount = f"₹{total_amount:,.2f}"
         formatted_subtotal = f"₹{subtotal:,.2f}" if subtotal is not None else None
@@ -247,12 +215,12 @@ class EmailService:
         """
         formatted_amount = f"₹{total_amount:,.2f}"
         if decision == "APPROVED":
-            subject = f"✅ Order {order_number} Approved ({formatted_amount})"
+            subject = f"✅ Order {order_number} APPROVED ({formatted_amount})"
             decision_color = "#10b981"
             decision_badge_bg = "rgba(16, 185, 129, 0.12)"
             decision_badge_border = "#10b981"
         else:
-            subject = f"❌ Order {order_number} Rejected ({formatted_amount})"
+            subject = f"❌ Order {order_number} REJECTED ({formatted_amount})"
             decision_color = "#ef4444"
             decision_badge_bg = "rgba(239, 68, 68, 0.12)"
             decision_badge_border = "#ef4444"

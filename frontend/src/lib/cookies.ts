@@ -82,15 +82,11 @@ export const authStorage = {
     const cookieToken = getCookie(TOKEN_KEYS.ACCESS_TOKEN);
     if (cookieToken) return cookieToken;
 
-    // 2. Migration fallback: migrate legacy localStorage item if exists
+    // 2. LocalStorage resilience (cross-site/incognito support)
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        const legacyToken = localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
-        if (legacyToken) {
-          setCookie(TOKEN_KEYS.ACCESS_TOKEN, legacyToken, { days: 1 });
-          localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
-          return legacyToken;
-        }
+        const localToken = localStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+        if (localToken) return localToken;
       } catch {}
     }
     return null;
@@ -101,30 +97,35 @@ export const authStorage = {
     const cookieRefresh = getCookie(TOKEN_KEYS.REFRESH_TOKEN);
     if (cookieRefresh) return cookieRefresh;
 
-    // 2. Migration fallback
+    // 2. LocalStorage resilience
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        const legacyRefresh = localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
-        if (legacyRefresh) {
-          setCookie(TOKEN_KEYS.REFRESH_TOKEN, legacyRefresh, { days: 7 });
-          localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
-          return legacyRefresh;
-        }
+        const localRefresh = localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+        if (localRefresh) return localRefresh;
       } catch {}
     }
     return null;
   },
 
   setTokens: (accessToken: string, refreshToken: string): void => {
-    // Store in cookies: access_token (1 day), refresh_token (7 days)
-    setCookie(TOKEN_KEYS.ACCESS_TOKEN, accessToken, { days: 1 });
-    setCookie(TOKEN_KEYS.REFRESH_TOKEN, refreshToken, { days: 7 });
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    // Store in cookies
+    setCookie(TOKEN_KEYS.ACCESS_TOKEN, accessToken, {
+      days: 1,
+      sameSite: isHttps ? 'None' : 'Lax',
+      secure: isHttps,
+    });
+    setCookie(TOKEN_KEYS.REFRESH_TOKEN, refreshToken, {
+      days: 7,
+      sameSite: isHttps ? 'None' : 'Lax',
+      secure: isHttps,
+    });
 
-    // Explicitly clean up any old keys in localStorage
+    // Store in localStorage for complete cross-origin reliability
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+        localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken);
       } catch {}
     }
   },
