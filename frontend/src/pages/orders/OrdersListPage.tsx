@@ -9,11 +9,20 @@ import { Button } from '../../components/ui/Button';
 import { SlideOver } from '../../components/ui/SlideOver';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { Plus, Eye, Ban, CheckCircle2, Clock, Download, FileText, Printer } from 'lucide-react';
+import { Plus, Eye, Ban, CheckCircle2, Clock, Download, FileText, Printer, Filter } from 'lucide-react';
+import { SearchableSelect, SelectOption } from '../../components/ui/SearchableSelect';
 import { ordersApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { InvoiceModal } from '../../components/orders/InvoiceModal';
 import { OrderReviewDrawerSkeleton } from '../../components/orders/OrderReviewDrawerSkeleton';
+
+const ORDER_STATUS_OPTIONS: SelectOption[] = [
+  { value: '', label: 'All Statuses' },
+  { value: 'PENDING_APPROVAL', label: 'Pending Approval', badge: 'Pending', badgeColor: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
+  { value: 'COMPLETED', label: 'Completed', badge: 'Approved', badgeColor: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' },
+  { value: 'REJECTED', label: 'Rejected', badge: 'Rejected', badgeColor: 'bg-rose-500/10 text-rose-600 border border-rose-500/20' },
+  { value: 'CANCELLED', label: 'Cancelled', badge: 'Cancelled', badgeColor: 'bg-zinc-500/10 text-zinc-600 border border-zinc-500/20' },
+];
 
 export const OrdersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -83,7 +92,7 @@ export const OrdersListPage: React.FC = () => {
     {
       key: 'status',
       header: 'Status',
-      width: '130px',
+      width: '155px',
       render: (o) => <StatusBadge status={o.status} size="sm" />,
     },
     {
@@ -174,21 +183,18 @@ export const OrdersListPage: React.FC = () => {
           setPage(1);
         }}
         filters={
-          <div className="flex items-center gap-2">
-            <select
+          <div className="w-52">
+            <SearchableSelect
+              size="sm"
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as any);
+              onChange={(val) => {
+                setStatusFilter((val as OrderStatus) || '');
                 setPage(1);
               }}
-              className="px-3 py-1.5 rounded-full text-caption border border-border bg-surface text-text focus:outline-none focus:ring-1 focus:ring-chart1"
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING_APPROVAL">Pending Approval</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="REJECTED">Rejected</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+              options={ORDER_STATUS_OPTIONS}
+              placeholder="All Statuses"
+              minSearchCount={10}
+            />
           </div>
         }
       />

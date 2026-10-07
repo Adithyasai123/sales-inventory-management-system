@@ -1,6 +1,6 @@
 import { apiClient } from '../lib/axios';
 import { PaginatedResponse, MessageResponse } from '../types';
-import { User, Tokens, LoginPayload, LoginResponse, RefreshResponse, Role, RoleCreatePayload, RoleUpdatePayload } from '../types/auth';
+import { User, Tokens, LoginPayload, LoginResponse, RefreshResponse, Role, RoleCreatePayload, RoleUpdatePayload, UserHierarchyNode } from '../types/auth';
 import { Customer, CustomerInput } from '../types/customer';
 import { Product, ProductInput, StockAdjustPayload } from '../types/product';
 import { SalesOrder, OrderDetail, CreateOrderPayload, OrderStatus } from '../types/order';
@@ -39,6 +39,10 @@ export const authApi = {
 export const usersApi = {
   list: async (params?: { page?: number; page_size?: number; role?: string; search?: string }): Promise<PaginatedResponse<User>> => {
     const { data } = await apiClient.get<PaginatedResponse<User>>('/users', { params });
+    return data;
+  },
+  getHierarchy: async (): Promise<UserHierarchyNode[]> => {
+    const { data } = await apiClient.get<UserHierarchyNode[]>('/users/hierarchy');
     return data;
   },
   create: async (payload: any): Promise<User> => {

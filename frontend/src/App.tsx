@@ -17,6 +17,7 @@ const ApprovalsQueuePage = React.lazy(() => import('./pages/approvals/ApprovalsQ
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const UsersPage = React.lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const AuditLogsPage = React.lazy(() => import('./pages/audit/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
+const ProfilePage = React.lazy(() => import('./pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 export const App: React.FC = () => {
@@ -126,6 +127,16 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN', 'FINANCE']}>
                   <AuditLogsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* User Profile & Reporting Hierarchy Tree (Full Screen) */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

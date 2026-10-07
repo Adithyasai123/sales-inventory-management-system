@@ -43,35 +43,26 @@ class ProductRepository(BaseRepository[Product]):
         sort_by: str = "name",
         sort_order: str = "asc",
     ) -> Tuple[List[Product], int]:
-        query = self.db.query(Product)
-        if not include_deleted:
-            query = query.filter(Product.is_deleted == False)
-
+        filters = {}
         if is_active is not None:
-            query = query.filter(Product.is_active == is_active)
-
+            filters["is_active"] = is_active
         if category:
-            query = query.filter(Product.category == category)
+            filters["category"] = category
 
-        if is_low_stock:
-            query = query.filter(Product.stock_quantity <= Product.reorder_level)
+        custom_filter = (Product.stock_quantity <= Product.reorder_level) if is_low_stock else None
 
-        if search:
-            term = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    Product.name.ilike(term),
-                    Product.sku.ilike(term),
-                    Product.category.ilike(term),
-                )
-            )
-
-        sort_col = getattr(Product, sort_by, Product.name)
-        query = query.order_by(desc(sort_col) if sort_order == "desc" else asc(sort_col))
-
-        total = query.count()
-        items = query.offset(skip).limit(limit).all()
-        return items, total
+        return self.paginate(
+            skip=skip,
+            limit=limit,
+            search=search,
+            search_fields=["name", "sku", "category"],
+            filters=filters or None,
+            custom_filter=custom_filter,
+            include_deleted=include_deleted,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            default_sort_by="name",
+        )
 
     def get_low_stock_products(self) -> List[Product]:
         return (

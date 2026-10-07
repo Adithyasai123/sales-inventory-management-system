@@ -193,12 +193,28 @@ class OrderService:
         # 8. Create EmailLog rows INSIDE transaction (before commit) so they commit atomically
         pending_emails = []
         if requires_approval:
+            items_summary = []
+            for item in order.items:
+                prod = products_map.get(item.product_id)
+                items_summary.append({
+                    "name": prod.name if prod else f"Product #{item.product_id}",
+                    "sku": prod.sku if prod else "-",
+                    "quantity": item.quantity,
+                    "unit_price": f"₹{item.unit_price:,.2f}",
+                    "total_price": f"₹{item.total_price:,.2f}",
+                })
+
             pending_emails = EmailService.create_approval_request_logs(
                 db=self.db,
                 order_number=order.order_number,
                 total_amount=order.total_amount,
                 creator_name=creator.full_name,
                 customer_name=customer.name,
+                creator=creator,
+                subtotal=subtotal,
+                tax_amount=tax_amount,
+                tax_rate=tax_rate,
+                items=items_summary,
             )
 
         self.db.commit()

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useEmailLogs, useAuditStats } from '../../hooks/useAudit';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { DataTable, Column } from '../../components/ui/DataTable';
-import { formatDate } from '../../lib/utils';
+import { formatDate, cn } from '../../lib/utils';
 import { EmailLogEntry } from '../../api';
 import { SlideOver } from '../../components/ui/SlideOver';
 import { Mail, CheckCircle2, Clock, XCircle, ShieldCheck, Activity, RefreshCw } from 'lucide-react';
@@ -203,44 +203,79 @@ export const AuditLogsPage: React.FC = () => {
       <SlideOver
         isOpen={!!selectedLog}
         onClose={() => setSelectedLog(null)}
-        title={selectedLog ? `Audit Record #${selectedLog.id}` : 'Log Details'}
-        subtitle={selectedLog ? `Logged at ${formatDate(selectedLog.created_at)}` : ''}
+        title={selectedLog ? `Notification #${selectedLog.id}` : 'Log Details'}
+        subtitle={selectedLog ? `Dispatched at ${formatDate(selectedLog.created_at)}` : ''}
         width="md"
       >
         {selectedLog && (
-          <div className="flex flex-col gap-5 text-sm">
+          <div className="flex flex-col gap-4 text-sm">
             <div className="p-4 rounded-xl bg-surfaceAlt/60 border border-border space-y-3">
               <div>
-                <span className="text-overline text-textMuted block">Delivery Status</span>
-                <span className="font-semibold text-text mt-0.5 block">{selectedLog.status}</span>
+                <span className="text-[11px] font-semibold text-textMuted uppercase tracking-wider block">Delivery Status</span>
+                <div className="mt-1">
+                  {selectedLog.status === 'SENT' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Delivered
+                    </span>
+                  ) : selectedLog.status === 'PENDING' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <Clock className="w-3.5 h-3.5" /> In Queue
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                      <XCircle className="w-3.5 h-3.5" /> Failed
+                    </span>
+                  )}
+                </div>
               </div>
+
               <div>
-                <span className="text-overline text-textMuted block">Target Recipient</span>
-                <span className="font-mono text-xs text-text mt-0.5 block">{selectedLog.recipient}</span>
+                <span className="text-[11px] font-semibold text-textMuted uppercase tracking-wider block">Recipient</span>
+                <span className="font-mono text-xs text-accent font-semibold mt-0.5 block truncate">
+                  {selectedLog.recipient}
+                </span>
               </div>
+
               <div>
-                <span className="text-overline text-textMuted block">Subject Line</span>
-                <span className="font-medium text-text mt-0.5 block">{selectedLog.subject}</span>
+                <span className="text-[11px] font-semibold text-textMuted uppercase tracking-wider block">Subject</span>
+                <span className="font-medium text-text text-xs mt-0.5 block leading-snug">{selectedLog.subject}</span>
               </div>
+
               {selectedLog.sent_at && (
                 <div>
-                  <span className="text-overline text-textMuted block">Dispatched At</span>
+                  <span className="text-[11px] font-semibold text-textMuted uppercase tracking-wider block">Sent At</span>
                   <span className="text-xs text-textMuted mt-0.5 block tabular-nums">{formatDate(selectedLog.sent_at)}</span>
                 </div>
               )}
             </div>
 
             {selectedLog.error_message && (
-              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
-                <span className="text-overline uppercase font-bold block mb-1">Error Diagnostic</span>
-                <p className="font-mono text-xs whitespace-pre-wrap">{selectedLog.error_message}</p>
+              <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs">
+                <span className="text-[10px] uppercase font-bold tracking-wider block mb-1">
+                  Delivery Diagnostic
+                </span>
+                <p className="font-mono text-[11px] whitespace-pre-wrap">{selectedLog.error_message}</p>
               </div>
             )}
 
             <div>
-              <span className="text-overline uppercase font-bold block mb-2">Message Body Preview</span>
-              <div className="p-4 rounded-xl bg-surface border border-border text-xs font-mono text-textMuted whitespace-pre-wrap leading-relaxed">
-                {selectedLog.body_preview || 'No preview stored for this event.'}
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-textMuted block mb-2">
+                Message Content
+              </span>
+              <div className="p-4 rounded-xl bg-surface border border-border text-xs text-text leading-relaxed">
+                {selectedLog.body_preview ? (
+                  selectedLog.body_preview.includes('<') ? (
+                    selectedLog.body_preview
+                      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                      .replace(/<[^>]+>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                  ) : (
+                    selectedLog.body_preview
+                  )
+                ) : (
+                  'No preview text recorded.'
+                )}
               </div>
             </div>
           </div>

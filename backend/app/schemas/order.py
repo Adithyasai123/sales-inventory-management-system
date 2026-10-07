@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from app.models.order import OrderStatus
 from app.schemas.customer import CustomerResponse
 from app.schemas.approval import ApprovalHistoryResponse
@@ -53,6 +53,14 @@ class OrderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer("created_at", "updated_at", check_fields=False)
+    def serialize_dt(self, dt: Optional[datetime], _info):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
 
 class OrderDetailResponse(OrderResponse):

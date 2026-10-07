@@ -133,23 +133,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({ isSuperAdmin }) => {
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Top Banner explaining Database dynamic RBAC */}
+      {/* Top Banner explaining Role-Based Access Control */}
       <div className="p-4 sm:p-5 rounded-2xl bg-surface border border-border shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="p-2.5 rounded-xl bg-accent/10 text-accent shrink-0 mt-0.5">
-            <Database className="w-5 h-5" />
+            <Shield className="w-5 h-5" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text flex items-center gap-2">
-              Dynamic SQL RBAC Architecture
+              Role-Based Access Control
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                Database Managed
+                Active Policies
               </span>
             </h3>
             <p className="text-caption text-muted mt-1 leading-relaxed max-w-2xl">
-              User roles and granular capability flags are stored directly in the SQL database table{' '}
-              <code className="text-[11px] px-1 py-0.5 rounded bg-surfaceAlt text-accent font-mono">roles</code>.
-              System roles provide protected foundation workflows, while custom dynamic roles can be defined with fine-grained screen permissions and operational abilities.
+              Configure system roles, security privileges, and granular operational capabilities for each user group. System roles enforce core operational safety, while custom roles can be created to meet organization-specific access requirements.
             </p>
           </div>
         </div>
@@ -162,7 +160,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({ isSuperAdmin }) => {
             leftIcon={<Plus className="w-4 h-4" />}
             className="shrink-0"
           >
-            Create Dynamic Role
+            Create Custom Role
           </Button>
         )}
       </div>
@@ -340,7 +338,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({ isSuperAdmin }) => {
 
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted">
                   <span>Record ID: #{r.id}</span>
-                  <span>{r.is_system ? 'Core System Protected' : 'Dynamic SQL Record'}</span>
+                  <span>{r.is_system ? 'System Protected' : 'Custom Role'}</span>
                 </div>
               </div>
             );
@@ -348,12 +346,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({ isSuperAdmin }) => {
         </div>
       )}
 
-      {/* CREATE DYNAMIC ROLE SLIDEOVER */}
+      {/* CREATE ROLE SLIDEOVER */}
       <SlideOver
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Create Dynamic Database Role"
-        subtitle="Configure a new role in SQL with customized screen access and system authority flags."
+        title="Create Custom Role"
+        subtitle="Configure a new access role with customized screen permissions and operational privileges."
         width="2xl"
       >
         <form onSubmit={handleCreateSubmit} className="flex flex-col gap-6 pb-10">

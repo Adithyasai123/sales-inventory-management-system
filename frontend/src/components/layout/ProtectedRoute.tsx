@@ -33,11 +33,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Manager is Super Admin and has unrestricted access to all screens and roles
-  const isSuperAdmin = user.role === 'MANAGER';
+  // Super admin has unrestricted access to all screens and roles
+  const isSuperAdmin = user.is_super_admin || user.role === 'MANAGER';
+
+  // Check if user has explicit screen access configured for this module
+  const hasExplicitScreenAccess =
+    screenId &&
+    user.allowed_screens &&
+    user.allowed_screens.some((s) => s.toLowerCase() === screenId.toLowerCase());
 
   // Check role-based restrictions
-  if (!isSuperAdmin && allowedRoles && !allowedRoles.includes(user.role)) {
+  if (!isSuperAdmin && !hasExplicitScreenAccess && allowedRoles && !allowedRoles.includes(user.role)) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center min-h-[60vh]">
         <div className="w-14 h-14 rounded-2xl bg-dangerSoft/50 border border-danger/20 flex items-center justify-center text-danger mb-4 shadow-sm">

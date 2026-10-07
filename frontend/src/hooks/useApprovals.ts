@@ -15,6 +15,7 @@ export function useSubmitApprovalAction() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['approvals', 'submit'],
     mutationFn: ({ id, payload }: { id: number; payload: ApprovalActionPayload }) =>
       approvalsApi.submitAction(id, payload),
     onSuccess: (data, variables) => {

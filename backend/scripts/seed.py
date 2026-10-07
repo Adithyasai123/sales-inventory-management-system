@@ -185,10 +185,21 @@ def seed_database() -> None:
         # Regional Managers created by Super Admin
         managers_data = [
             {
+                "email": "adithyasainulu@gmail.com",
+                "full_name": "Adithya",
+                "password": "Manager@123456",
+                "role": UserRole.MANAGER,
+                "branch": "Hyderabad",
+                "is_super_admin": False,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
+            },
+            {
                 "email": "priya.manager@sims.in",
                 "full_name": "Priya Patel",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
+                "branch": "Bangalore",
                 "is_super_admin": False,
                 "manager_id": super_admin.id,
                 "created_by_id": super_admin.id,
@@ -198,6 +209,7 @@ def seed_database() -> None:
                 "full_name": "Vikram Malhotra",
                 "password": "Manager@123456",
                 "role": UserRole.MANAGER,
+                "branch": "Mumbai",
                 "is_super_admin": False,
                 "manager_id": super_admin.id,
                 "created_by_id": super_admin.id,
@@ -207,6 +219,7 @@ def seed_database() -> None:
                 "full_name": "Suresh Raina",
                 "password": "Admin@123456",
                 "role": UserRole.ADMIN,
+                "branch": "Delhi",
                 "is_super_admin": False,
                 "manager_id": super_admin.id,
                 "created_by_id": super_admin.id,
@@ -229,66 +242,162 @@ def seed_database() -> None:
                     is_super_admin=m_data["is_super_admin"],
                     manager_id=m_data["manager_id"],
                     created_by_id=m_data["created_by_id"],
+                    branch=m_data.get("branch", "Hyderabad"),
                 )
                 db.add(new_mgr)
                 db.flush()
                 mgr_map[m_data["email"]] = new_mgr
-                logger.info(f"Seeded Manager: {m_data['email']}")
+                logger.info(f"Seeded Manager: {m_data['email']} ({m_data['branch']} Circle)")
             else:
                 existing.role_id = role_record.id if role_record else None
+                existing.branch = m_data.get("branch", "Hyderabad")
                 mgr_map[m_data["email"]] = existing
 
+        adithya_mgr = mgr_map.get("adithyasainulu@gmail.com") or super_admin
         priya_mgr = mgr_map.get("priya.manager@sims.in") or super_admin
         vikram_mgr = mgr_map.get("vikram.manager@sims.in") or super_admin
+        suresh_admin = mgr_map.get("admin@sims.in") or super_admin
 
-        # Employees assigned to their respective Managers
+        # First seed the team leads under their regional managers
+        leads_data = [
+            {
+                "email": "hyd.sales1@sims.in",
+                "full_name": "Ramesh Kumar (Team Lead)",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "role": UserRole.SALES,
+                "manager_id": adithya_mgr.id,
+                "created_by_id": adithya_mgr.id,
+                "allowed_screens": "dashboard,orders,products,customers,inventory,users",
+            },
+            {
+                "email": "sneha.reddy@sims.in",
+                "full_name": "Sneha Reddy (Team Lead)",
+                "password": "Sales@123456",
+                "branch": "Bangalore",
+                "role": UserRole.SALES,
+                "manager_id": priya_mgr.id,
+                "created_by_id": priya_mgr.id,
+                "allowed_screens": "dashboard,orders,products,customers,inventory,users",
+            },
+            {
+                "email": "rahul.deshmukh@sims.in",
+                "full_name": "Rahul Deshmukh (Team Lead)",
+                "password": "Sales@123456",
+                "branch": "Mumbai",
+                "role": UserRole.SALES,
+                "manager_id": vikram_mgr.id,
+                "created_by_id": vikram_mgr.id,
+                "allowed_screens": "dashboard,orders,products,customers,inventory,users",
+            },
+        ]
+
+        lead_map = {}
+        for l_data in leads_data:
+            existing = db.query(User).filter_by(email=l_data["email"]).first()
+            role_record = role_map.get("SALES")
+            if not existing:
+                new_lead = User(
+                    email=l_data["email"],
+                    hashed_password=get_password_hash(l_data["password"]),
+                    full_name=l_data["full_name"],
+                    role="SALES",
+                    role_id=role_record.id if role_record else None,
+                    is_active=True,
+                    is_super_admin=False,
+                    manager_id=l_data["manager_id"],
+                    created_by_id=l_data["created_by_id"],
+                    branch=l_data.get("branch", "Hyderabad"),
+                )
+                if "allowed_screens" in l_data:
+                    new_lead.allowed_screens = l_data["allowed_screens"].split(",")
+                db.add(new_lead)
+                db.flush()
+                lead_map[l_data["email"]] = new_lead
+            else:
+                existing.manager_id = l_data["manager_id"]
+                existing.full_name = l_data["full_name"]
+                existing.branch = l_data.get("branch", "Hyderabad")
+                if "allowed_screens" in l_data:
+                    existing.allowed_screens = l_data["allowed_screens"].split(",")
+                lead_map[l_data["email"]] = existing
+
+        hyd_lead = lead_map.get("hyd.sales1@sims.in") or adithya_mgr
+        blr_lead = lead_map.get("sneha.reddy@sims.in") or priya_mgr
+        mum_lead = lead_map.get("rahul.deshmukh@sims.in") or vikram_mgr
+
+        # Nested employees reporting to Team Leads or directly to Managers
         employees_data = [
+            # Hyderabad team (total 5 employees under Adithya's branch: 1 Lead + 4 sales reps)
+            {
+                "email": "hyd.sales2@sims.in",
+                "full_name": "Sita Reddy",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "manager_id": adithya_mgr.id,
+                "created_by_id": adithya_mgr.id,
+            },
+            {
+                "email": "hyd.sales3@sims.in",
+                "full_name": "Vijay Varma",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "manager_id": adithya_mgr.id,
+                "created_by_id": adithya_mgr.id,
+            },
+            # Reporting under Ramesh Kumar (Team Lead under Adithya)
+            {
+                "email": "hyd.sales4@sims.in",
+                "full_name": "Ananya Rao",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "manager_id": hyd_lead.id,
+                "created_by_id": hyd_lead.id,
+            },
+            {
+                "email": "hyd.sales5@sims.in",
+                "full_name": "Kiran Teja",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "manager_id": hyd_lead.id,
+                "created_by_id": hyd_lead.id,
+            },
             # Super Admin's direct sales rep
             {
                 "email": "sales@sims.in",
                 "full_name": "Amit Verma",
                 "password": "Sales@123456",
+                "branch": "Headquarters",
                 "manager_id": super_admin.id,
                 "created_by_id": super_admin.id,
             },
-            # Priya's team
-            {
-                "email": "sneha.reddy@sims.in",
-                "full_name": "Sneha Reddy",
-                "password": "Sales@123456",
-                "manager_id": priya_mgr.id,
-                "created_by_id": priya_mgr.id,
-            },
+            # Bangalore team member reporting to Team Lead Sneha Reddy
             {
                 "email": "ananya.iyer@sims.in",
                 "full_name": "Ananya Iyer",
                 "password": "Sales@123456",
-                "manager_id": priya_mgr.id,
-                "created_by_id": priya_mgr.id,
+                "branch": "Bangalore",
+                "manager_id": blr_lead.id,
+                "created_by_id": blr_lead.id,
             },
-            # Vikram's team
-            {
-                "email": "rahul.deshmukh@sims.in",
-                "full_name": "Rahul Deshmukh",
-                "password": "Sales@123456",
-                "manager_id": vikram_mgr.id,
-                "created_by_id": vikram_mgr.id,
-            },
+            # Mumbai team member reporting to Team Lead Rahul Deshmukh
             {
                 "email": "kavita.nair@sims.in",
                 "full_name": "Kavita Nair",
                 "password": "Sales@123456",
-                "manager_id": vikram_mgr.id,
-                "created_by_id": vikram_mgr.id,
+                "branch": "Mumbai",
+                "manager_id": mum_lead.id,
+                "created_by_id": mum_lead.id,
             },
-            # Dedicated Operational Specialists
+            # Dedicated Operational Specialists reporting to Suresh Raina (Admin)
             {
                 "email": "warehouse@sims.in",
-                "full_name": "Ramesh Kumar",
+                "full_name": "Ramesh Kumar (Logistics)",
                 "password": "Warehouse@123456",
                 "role": UserRole.WAREHOUSE,
-                "manager_id": super_admin.id,
-                "created_by_id": super_admin.id,
+                "branch": "Central Warehouse",
+                "manager_id": suresh_admin.id,
+                "created_by_id": suresh_admin.id,
                 "allowed_screens": "dashboard,orders,products,inventory",
             },
             {
@@ -296,8 +405,9 @@ def seed_database() -> None:
                 "full_name": "Neha Gupta",
                 "password": "Finance@123456",
                 "role": UserRole.FINANCE,
-                "manager_id": super_admin.id,
-                "created_by_id": super_admin.id,
+                "branch": "Central Finance",
+                "manager_id": suresh_admin.id,
+                "created_by_id": suresh_admin.id,
                 "allowed_screens": "dashboard,orders,customers,inventory,audit",
             },
         ]
@@ -318,15 +428,19 @@ def seed_database() -> None:
                     is_super_admin=False,
                     manager_id=e_data["manager_id"],
                     created_by_id=e_data["created_by_id"],
+                    branch=e_data.get("branch", "Hyderabad"),
                 )
                 if "allowed_screens" in e_data:
-                    new_emp.allowed_screens = e_data["allowed_screens"]
-                elif role_record and role_record.allowed_screens:
-                    new_emp.allowed_screens = role_record.allowed_screens.split(",")
+                    new_emp.allowed_screens = e_data["allowed_screens"].split(",")
                 db.add(new_emp)
-                logger.info(f"Seeded User: {e_data['email']} ({e_role_str})")
+                db.flush()
+                logger.info(f"Seeded Employee: {e_data['email']} under Manager #{e_data['manager_id']}")
             else:
                 existing.role_id = role_record.id if role_record else None
+                existing.manager_id = e_data["manager_id"]
+                existing.branch = e_data.get("branch", "Hyderabad")
+                if "allowed_screens" in e_data:
+                    existing.allowed_screens = e_data["allowed_screens"].split(",")
 
         db.flush()
 

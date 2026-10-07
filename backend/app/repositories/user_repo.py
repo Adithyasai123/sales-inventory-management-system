@@ -35,31 +35,29 @@ class UserRepository(BaseRepository[User]):
         search: Optional[str] = None,
         include_deleted: bool = False,
         scoped_manager_id: Optional[int] = None,
+        scoped_branch: Optional[str] = None,
     ) -> Tuple[List[User], int]:
-        query = self.db.query(User)
-        if not include_deleted:
-            query = query.filter(User.is_deleted == False)
-
+        custom_filter = None
         if scoped_manager_id is not None:
-            query = query.filter(
-                or_(
-                    User.manager_id == scoped_manager_id,
-                    User.created_by_id == scoped_manager_id,
-                )
-            )
+            conditions = [
+                User.manager_id == scoped_manager_id,
+                User.created_by_id == scoped_manager_id,
+                User.id == scoped_manager_id,
+            ]
+            if scoped_branch:
+                conditions.append(User.branch == scoped_branch)
+            custom_filter = or_(*conditions)
 
-        if role:
-            query = query.filter(User.role == role)
+        filters = {"role": role} if role else None
 
-        if search:
-            search_term = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    User.full_name.ilike(search_term),
-                    User.email.ilike(search_term),
-                )
-            )
-
-        total = query.count()
-        items = query.order_by(User.id.asc()).offset(skip).limit(limit).all()
-        return items, total
+        return self.paginate(
+            skip=skip,
+            limit=limit,
+            search=search,
+            search_fields=["full_name", "email"],
+            filters=filters,
+            custom_filter=custom_filter,
+            include_deleted=include_deleted,
+            default_sort_by="id",
+            sort_order="asc",
+        )

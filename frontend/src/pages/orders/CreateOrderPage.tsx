@@ -7,7 +7,8 @@ import { useSettings } from '../../hooks/useSettings';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
-import { formatCurrency } from '../../lib/utils';
+import { SearchableSelect, SelectOption } from '../../components/ui/SearchableSelect';
+import { formatCurrency, cn } from '../../lib/utils';
 import { Plus, Trash2, ArrowLeft, AlertCircle, ShieldAlert, Check, ShoppingCart, Receipt } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,8 +20,8 @@ interface OrderLine {
 export const CreateOrderPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const { data: customerData } = useCustomers({ page_size: 100, is_active: true });
-  const { data: productData } = useProducts({ page_size: 100, is_active: true });
+  const { data: customerData, isLoading: isLoadingCustomers } = useCustomers({ page_size: 100, is_active: true });
+  const { data: productData, isLoading: isLoadingProducts } = useProducts({ page_size: 100, is_active: true });
   const { data: settings } = useSettings();
 
   const thresholdSetting = settings?.find((s) => s.key === 'approval_threshold');
@@ -29,9 +30,53 @@ export const CreateOrderPage: React.FC = () => {
   const createOrderMutation = useCreateOrder();
 
   const [customerId, setCustomerId] = useState<number | ''>('');
-  const [taxRate, setTaxRate] = useState<number>(0.0);
+  const [taxRateInput, setTaxRateInput] = useState<string>('18');
   const [notes, setNotes] = useState<string>('');
   const [lines, setLines] = useState<OrderLine[]>([{ product_id: 0, quantity: 1 }]);
+
+  const taxRate = useMemo(() => {
+    if (!taxRateInput.trim()) return 0;
+    const val = parseFloat(taxRateInput);
+    return isNaN(val) ? 0 : Math.max(0, Math.min(100, val));
+  }, [taxRateInput]);
+
+  const customerOptions = useMemo<SelectOption[]>(() => {
+    if (!customerData?.items) return [];
+    return customerData.items.map((c) => ({
+      value: c.id,
+      label: c.name,
+      description: `${c.company ? c.company + ' • ' : ''}${c.email || 'No email'}${c.phone ? ' • ' + c.phone : ''}`,
+      badge: c.city || 'Verified',
+    }));
+  }, [customerData?.items]);
+
+  const productOptions = useMemo<SelectOption[]>(() => {
+    if (!productData?.items) return [];
+    return productData.items.map((p) => {
+      const isOutOfStock = p.stock_quantity <= 0;
+      const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= 5;
+      const stockBadge = isOutOfStock
+        ? 'Out of Stock'
+        : isLowStock
+        ? `${p.stock_quantity} left`
+        : `${p.stock_quantity} in stock`;
+      const stockBadgeColor = isOutOfStock
+        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+        : isLowStock
+        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+
+      return {
+        value: p.id,
+        label: p.name,
+        description: `SKU: ${p.sku} • ${p.category || 'General'}`,
+        badge: formatCurrency(p.price),
+        badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25',
+        stockText: stockBadge,
+        stockColor: stockBadgeColor,
+      };
+    });
+  }, [productData?.items]);
 
   const productsMap = useMemo(() => {
     const map = new Map();
@@ -150,31 +195,113 @@ export const CreateOrderPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="Customer" required>
-                <Select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(Number(e.target.value) || '')}
+              <div>
+                <SearchableSelect
+                  label="Customer"
                   required
-                >
-                  <option value="">Select a customer...</option>
-                  {customerData?.items?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.company ? `(${c.company})` : ''}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-
-              <FormField label="Tax Rate (%)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                  value={customerId}
+                  onChange={(val) => setCustomerId(val ? Number(val) : '')}
+                  options={customerOptions}
+                  isLoading={isLoadingCustomers}
+                  placeholder="Select a customer..."
+                  searchPlaceholder="Search by name, company, email..."
+                  minSearchCount={2}
+                  isClearable
+                  showBadgeInTrigger={false}
                 />
-              </FormField>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-text">
+                    Tax Rate (%)
+                  </label>
+                  <span className="text-[11px] text-muted font-mono font-medium">
+                    Applied: <strong className="text-accent">{taxRate}%</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = parseFloat(taxRateInput) || 0;
+                      const next = Math.max(0, cur - 1);
+                      setTaxRateInput(next.toString());
+                    }}
+                    className="w-10 h-10 rounded-xl bg-surfaceAlt border border-border hover:bg-surface text-text font-bold text-base flex items-center justify-center shrink-0 transition-colors shadow-xs hover:border-accent/40 cursor-pointer"
+                    title="Decrease Tax Rate by 1%"
+                  >
+                    -
+                  </button>
+
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={taxRateInput}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                            setTaxRateInput(val.replace(/^0+/, ''));
+                          } else {
+                            setTaxRateInput(val);
+                          }
+                        }
+                      }}
+                      className="w-full h-10 px-3.5 pr-8 rounded-xl bg-surface border border-border text-sm font-semibold text-text tabular-nums focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent shadow-xs"
+                      placeholder="e.g. 18"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted pointer-events-none">
+                      %
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = parseFloat(taxRateInput) || 0;
+                      const next = Math.min(100, cur + 1);
+                      setTaxRateInput(next.toString());
+                    }}
+                    className="w-10 h-10 rounded-xl bg-surfaceAlt border border-border hover:bg-surface text-text font-bold text-base flex items-center justify-center shrink-0 transition-colors shadow-xs hover:border-accent/40 cursor-pointer"
+                    title="Increase Tax Rate by 1%"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Quick Indian GST Slabs Presets */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] text-muted font-medium uppercase tracking-wider mr-0.5">Presets:</span>
+                  {[
+                    { label: '0%', val: '0' },
+                    { label: '5%', val: '5' },
+                    { label: '12%', val: '12' },
+                    { label: '18% GST', val: '18' },
+                    { label: '28%', val: '28' },
+                  ].map((preset) => {
+                    const isActive = Math.abs(taxRate - parseFloat(preset.val)) < 0.01;
+                    return (
+                      <button
+                        key={preset.val}
+                        type="button"
+                        onClick={() => setTaxRateInput(preset.val)}
+                        className={cn(
+                          'px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all border shadow-xs cursor-pointer',
+                          isActive
+                            ? 'bg-accent/20 border-accent text-accent font-bold ring-1 ring-accent/30'
+                            : 'bg-surfaceAlt/80 border-border/80 text-muted hover:text-text hover:bg-surfaceAlt'
+                        )}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <FormField label="Order Notes / Delivery Instructions">
@@ -222,20 +349,19 @@ export const CreateOrderPage: React.FC = () => {
                   >
                     {/* Product Picker */}
                     <div className="flex-1 w-full">
-                      <Select
+                      <SearchableSelect
                         value={line.product_id}
-                        onChange={(e) =>
-                          handleLineChange(idx, 'product_id', parseInt(e.target.value, 10) || 0)
+                        onChange={(val) =>
+                          handleLineChange(idx, 'product_id', parseInt(val, 10) || 0)
                         }
-                        required
-                      >
-                        <option value={0}>Select a product...</option>
-                        {productData?.items?.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.sku} — {p.name} ({formatCurrency(p.price)} | {p.stock_quantity} available)
-                          </option>
-                        ))}
-                      </Select>
+                        options={productOptions}
+                        isLoading={isLoadingProducts}
+                        placeholder="Select a product..."
+                        searchPlaceholder="Search product by SKU or name..."
+                        minSearchCount={2}
+                        dropdownWidth="wide"
+                        showBadgeInTrigger={false}
+                      />
                     </div>
 
                     {/* Quantity Stepper */}
@@ -319,6 +445,12 @@ export const CreateOrderPage: React.FC = () => {
                   {formatCurrency(totalAmount)}
                 </span>
               </div>
+
+              {subtotal === 0 && (
+                <div className="text-[11px] text-muted/80 text-center py-1.5 px-2 bg-surface/60 rounded-lg border border-border/40 mt-1">
+                  💡 Select products in Step 2 to compute live tax &amp; total amount
+                </div>
+              )}
             </div>
 
             {/* Threshold & Approval Status Card */}

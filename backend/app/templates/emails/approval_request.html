@@ -1,39 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8">
-    <title>Sales Order Approval Required</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>Action Required: Sales Order Approval</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            supported-color-schemes: light dark;
+        }
+        @media (prefers-color-scheme: dark) {
+            body, .body-bg {
+                background-color: #090d16 !important;
+            }
+            .card-bg {
+                background-color: #121927 !important;
+                border-color: #1e293b !important;
+            }
+            .inner-box {
+                background-color: #0d1320 !important;
+                border-color: #1e293b !important;
+            }
+            .title-text {
+                color: #f8fafc !important;
+            }
+            .body-text {
+                color: #cbd5e1 !important;
+            }
+            .sub-text {
+                color: #94a3b8 !important;
+            }
+            .table-head {
+                background-color: #1a2234 !important;
+                color: #94a3b8 !important;
+                border-color: #243048 !important;
+            }
+            .table-cell {
+                border-color: #1e293b !important;
+                color: #e2e8f0 !important;
+            }
+            .divider {
+                border-color: #1e293b !important;
+            }
+            .total-box {
+                background-color: #162032 !important;
+                border-color: #24344d !important;
+            }
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #E9F6F0; padding: 24px; color: #0F2E2A;">
-    <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #CFE7DC; padding: 32px;">
-        <h2 style="color: #0F2E2A; margin-top: 0;">Sales Order Approval Required</h2>
-        <p>Hello Manager,</p>
-        <p>A new high-value sales order has been created that exceeds the approval threshold and awaits your review:</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: #F1FAF6; border-radius: 12px; padding: 16px;">
-            <tr>
-                <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #CFE7DC;">Order Number:</td>
-                <td style="padding: 10px; font-family: monospace; border-bottom: 1px solid #CFE7DC;">{{ order_number }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #CFE7DC;">Customer:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #CFE7DC;">{{ customer_name }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #CFE7DC;">Created By:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #CFE7DC;">{{ creator_name }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 10px; font-weight: bold;">Total Amount:</td>
-                <td style="padding: 10px; font-weight: bold; color: #0F3D33; font-size: 16px;">{{ formatted_amount }}</td>
-            </tr>
-        </table>
-
-        <p>Please log in to the <strong>Sales &amp; Inventory Management System (SIMS)</strong> to inspect line items and submit your approval or rejection decision.</p>
-        
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #CFE7DC; font-size: 12px; color: #5B7A73;">
-            This is an automated system notification from SIMS.
-        </div>
+<body class="body-bg" style="margin: 0; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #0f172a; -webkit-font-smoothing: antialiased;">
+    
+    <!-- Preheader Hidden Preview Text -->
+    <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f1f5f9; opacity: 0;">
+        Action Required: {{ creator_name }} created order {{ order_number }} ({{ formatted_amount }}) for {{ customer_name }}. Review and approve.
+        &#847; &zwnj; &nbsp; &#8199; &#65279; &#847; &zwnj; &nbsp; &#8199; &#65279; &#847; &zwnj; &nbsp; &#8199; &#65279;
     </div>
+
+    <!-- Main Container Card -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 620px; margin: 0 auto;">
+        <tr>
+            <td>
+                <div class="card-bg" style="background-color: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header Branding -->
+                    <div style="padding: 24px 28px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid #3b82f6;">
+                        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td>
+                                    <span style="font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">SIMS</span>
+                                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #3b82f6; margin-left: 4px; vertical-align: middle;"></span>
+                                    <div style="font-size: 12px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">Sales &amp; Inventory Management System</div>
+                                </td>
+                                <td align="right">
+                                    <span style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Pending Approval
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Body Content -->
+                    <div style="padding: 28px;">
+                        
+                        <h1 class="title-text" style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
+                            Sales Order Approval Required
+                        </h1>
+                        <p class="body-text" style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+                            A new sales order was submitted by <strong>{{ creator_name }}</strong> that exceeds the corporate approval threshold of <strong>₹75,000.00</strong>. Your authorization is required before inventory can be dispatched.
+                        </p>
+
+                        <!-- Key Order Metadata Box -->
+                        <div class="inner-box" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td width="50%" style="padding-bottom: 12px; vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Order Number</div>
+                                        <div class="title-text" style="font-size: 14px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #2563eb; margin-top: 2px;">{{ order_number }}</div>
+                                    </td>
+                                    <td width="50%" style="padding-bottom: 12px; vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Customer</div>
+                                        <div class="title-text" style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 2px;">{{ customer_name }}</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="50%" style="vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Created By</div>
+                                        <div class="body-text" style="font-size: 13px; font-weight: 500; color: #1e293b; margin-top: 2px;">{{ creator_name }} {% if creator_branch %}<span style="color: #64748b; font-size: 12px;">({{ creator_branch }})</span>{% endif %}</div>
+                                    </td>
+                                    <td width="50%" style="vertical-align: top;">
+                                        <div class="sub-text" style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px;">Date Submitted</div>
+                                        <div class="body-text" style="font-size: 13px; font-weight: 500; color: #1e293b; margin-top: 2px;">{{ date }}</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Line Items Table (if provided) -->
+                        {% if items and items|length > 0 %}
+                        <div style="margin-bottom: 24px;">
+                            <div class="sub-text" style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 10px;">
+                                Order Line Items ({{ items|length }})
+                            </div>
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%; border-radius: 8px; overflow: hidden;">
+                                <tr class="table-head" style="background-color: #f1f5f9; text-align: left; font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <th style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0;">Product</th>
+                                    <th style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Qty</th>
+                                    <th style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">Unit Price</th>
+                                    <th style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">Total</th>
+                                </tr>
+                                {% for item in items %}
+                                <tr>
+                                    <td class="table-cell" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #1e293b;">
+                                        <div style="font-weight: 600;">{{ item.name }}</div>
+                                        {% if item.sku %}<div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ item.sku }}</div>{% endif %}
+                                    </td>
+                                    <td class="table-cell" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: center; color: #1e293b; font-weight: 600;">
+                                        {{ item.quantity }}
+                                    </td>
+                                    <td class="table-cell" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: right; color: #64748b; font-family: monospace;">
+                                        {{ item.unit_price }}
+                                    </td>
+                                    <td class="table-cell" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: right; font-weight: 700; color: #0f172a; font-family: monospace;">
+                                        {{ item.total_price }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        {% endif %}
+
+                        <!-- Financial Summary Box -->
+                        <div class="total-box" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 28px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                {% if formatted_subtotal %}
+                                <tr>
+                                    <td class="sub-text" style="font-size: 13px; color: #64748b; padding-bottom: 6px;">Subtotal:</td>
+                                    <td class="body-text" align="right" style="font-size: 13px; font-weight: 600; color: #1e293b; font-family: monospace; padding-bottom: 6px;">{{ formatted_subtotal }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if formatted_tax %}
+                                <tr>
+                                    <td class="sub-text" style="font-size: 13px; color: #64748b; padding-bottom: 10px;">Tax {% if tax_rate %}({{ tax_rate }}){% endif %}:</td>
+                                    <td class="body-text" align="right" style="font-size: 13px; font-weight: 600; color: #1e293b; font-family: monospace; padding-bottom: 10px;">{{ formatted_tax }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="divider title-text" style="font-size: 15px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0; padding-top: 10px;">Total Amount:</td>
+                                    <td class="divider" align="right" style="font-size: 20px; font-weight: 800; color: #059669; font-family: monospace; border-top: 1px solid #e2e8f0; padding-top: 10px;">{{ formatted_amount }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div style="text-align: center; margin: 32px 0 24px 0;">
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ review_url }}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="18%" stroke="f" fillcolor="#2563eb">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Review &amp; Approve Order &rarr;</center>
+                            </v:roundrect>
+                            <![endif]-->
+                            <a href="{{ review_url }}" target="_blank" style="background-color: #2563eb; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); mso-hide: all;">
+                                Review &amp; Approve Order &rarr;
+                            </a>
+                        </div>
+
+                        <p class="sub-text" style="font-size: 12px; color: #64748b; text-align: center; margin: 0 0 16px 0;">
+                            Or copy link: <a href="{{ review_url }}" style="color: #2563eb; text-decoration: underline;">{{ review_url }}</a>
+                        </p>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="divider" style="padding: 20px 28px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                        <p class="sub-text" style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                            This is an automated operational notification dispatched to authorized managers.<br>
+                            Sales &amp; Inventory Management System (SIMS) &bull; Enterprise Operations
+                        </p>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
 </body>
 </html>

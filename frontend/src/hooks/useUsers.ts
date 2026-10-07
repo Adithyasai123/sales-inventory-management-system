@@ -10,10 +10,18 @@ export function useUsers(params?: { page?: number; page_size?: number; role?: st
   });
 }
 
+export function useUserHierarchy() {
+  return useQuery({
+    queryKey: ['users-hierarchy'],
+    queryFn: () => usersApi.getHierarchy(),
+  });
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['users', 'create'],
     mutationFn: (payload: any) => usersApi.create(payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -29,6 +37,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['users', 'update'],
     mutationFn: ({ id, payload }: { id: number; payload: any }) => usersApi.update(id, payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -44,6 +53,7 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['users', 'delete'],
     mutationFn: (id: number) => usersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });

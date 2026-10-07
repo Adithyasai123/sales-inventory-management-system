@@ -113,6 +113,17 @@ def logout(response: Response):
 
 
 @router.get("/me", response_model=UserMeResponse)
-def get_current_user_profile(current_user: User = Depends(get_current_user)):
-    """Get details of the currently authenticated user."""
-    return current_user
+def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get details of the currently authenticated user including manager name."""
+    manager_name = None
+    if current_user.manager_id:
+        mgr = db.query(User).filter(User.id == current_user.manager_id).first()
+        if mgr:
+            manager_name = mgr.full_name
+
+    res = UserMeResponse.model_validate(current_user)
+    res.manager_name = manager_name
+    return res

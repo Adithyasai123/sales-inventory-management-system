@@ -39,6 +39,8 @@ class RefreshResponse(BaseModel):
     message: str = "Token refreshed successfully"
 
 
+from datetime import datetime
+
 class UserMeResponse(BaseModel):
     id: int
     email: str
@@ -48,7 +50,10 @@ class UserMeResponse(BaseModel):
     is_active: bool
     is_super_admin: bool = False
     manager_id: Optional[int] = None
+    manager_name: Optional[str] = None
+    branch: Optional[str] = "Hyderabad"
     allowed_screens: List[str] = []
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

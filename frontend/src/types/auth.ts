@@ -58,10 +58,27 @@ export interface User {
   is_active: boolean;
   is_super_admin?: boolean;
   manager_id?: number | null;
+  manager_name?: string | null;
+  branch?: string | null;
+  direct_reports_count?: number;
   created_by_id?: number | null;
   allowed_screens?: string[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface UserHierarchyNode {
+  id: number;
+  full_name: string;
+  email: string;
+  role: UserRole;
+  branch?: string | null;
+  is_active: boolean;
+  is_super_admin: boolean;
+  manager_id?: number | null;
+  manager_name?: string | null;
+  direct_reports: UserHierarchyNode[];
+  orders_count?: number;
 }
 
 export interface Tokens {
@@ -93,6 +110,7 @@ export interface UserCreatePayload {
   role_id?: number | null;
   is_active?: boolean;
   manager_id?: number | null;
+  branch?: string;
   allowed_screens?: string[];
 }
 
@@ -104,5 +122,6 @@ export interface UserUpdatePayload {
   role_id?: number | null;
   is_active?: boolean;
   manager_id?: number | null;
+  branch?: string;
   allowed_screens?: string[];
 }

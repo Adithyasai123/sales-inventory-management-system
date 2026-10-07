@@ -102,14 +102,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // Manager is Super Admin and has access to all screens
     if (isSuperAdmin) return true;
 
-    // Check basic role requirement
-    if (!item.roles.includes(user.role)) return false;
-
-    // Check screen access permissions configured by Manager
+    // Check explicit screen access permissions configured for this user
     if (user.allowed_screens && user.allowed_screens.length > 0) {
-      return user.allowed_screens.includes(item.screenId);
+      if (user.allowed_screens.includes(item.screenId)) {
+        return true;
+      }
     }
-    return true;
+
+    // Fallback to role-based check
+    return item.roles.includes(user.role);
   });
 
   return (
