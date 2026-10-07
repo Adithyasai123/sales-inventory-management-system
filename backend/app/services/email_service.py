@@ -44,6 +44,40 @@ class EmailService:
                         db.commit()
                 return True
 
+            # 1. First priority: Resend HTTP API (HTTPS port 443 - works on Render, Vercel, and all cloud providers without SMTP port blocking)
+            if settings.RESEND_API_KEY:
+                try:
+                    import httpx
+                    resend_payload = {
+                        "from": f"{settings.EMAILS_FROM_NAME} <onboarding@resend.dev>",
+                        "to": [to_email],
+                        "subject": subject,
+                        "html": html_body,
+                    }
+                    res = httpx.post(
+                        "https://api.resend.com/emails",
+                        headers={
+                            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                            "Content-Type": "application/json",
+                        },
+                        json=resend_payload,
+                        timeout=10,
+                    )
+                    if res.status_code in [200, 201]:
+                        logger.info(f"Email successfully dispatched via Resend HTTP API to {to_email} | Subject: {subject}")
+                        if log_id:
+                            email_log = db.query(EmailLog).filter(EmailLog.id == log_id).first()
+                            if email_log:
+                                email_log.status = EmailStatus.SENT
+                                email_log.sent_at = datetime.now(timezone.utc)
+                                email_log.error_message = None
+                                db.commit()
+                        return True
+                    else:
+                        logger.warning(f"Resend HTTP API returned status {res.status_code}: {res.text}. Falling back to SMTP...")
+                except Exception as resend_exc:
+                    logger.warning(f"Resend HTTP dispatch attempt failed: {resend_exc}. Falling back to SMTP...")
+
             from email.header import Header
             msg = MIMEMultipart("alternative")
             msg["Subject"] = Header(subject, "utf-8")
@@ -106,7 +140,14 @@ class EmailService:
                         db.commit()
                 return True
             else:
-                error_msg = f"Failed to send email to {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT}: {last_error}"
+                is_render_firewall = "101" in str(last_error) or "unreachable" in str(last_error).lower()
+                if is_render_firewall:
+                    error_msg = (
+                        f"Render blocks outbound SMTP ports (587/465) on its Free tier: {last_error}. "
+                        f"To enable live emails on Render, add RESEND_API_KEY in Render Dashboard Environment variables."
+                    )
+                else:
+                    error_msg = f"Failed to send email to {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT}: {last_error}"
                 logger.error(error_msg)
                 if log_id:
                     email_log = db.query(EmailLog).filter(EmailLog.id == log_id).first()

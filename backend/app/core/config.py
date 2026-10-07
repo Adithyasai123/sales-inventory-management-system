@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     SMTP_SSL: bool = False
     EMAILS_FROM_EMAIL: str = "adithyasainulu@gmail.com"
     EMAILS_FROM_NAME: str = "SIMS Notifications"
+    RESEND_API_KEY: str = ""
 
     # Default Business Rules
     DEFAULT_APPROVAL_THRESHOLD: Decimal = Decimal("75000.00")
