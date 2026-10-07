@@ -9,6 +9,7 @@ from app.core.exceptions import EntityNotFoundException, DuplicateResourceExcept
 from app.dependencies import get_current_user, require_role
 from app.models.user import User, UserRole
 from app.repositories.user_repo import UserRepository
+from app.repositories.role_repo import RoleRepository
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.schemas.common import PaginatedResponse, MessageResponse
 
@@ -72,9 +73,19 @@ def create_user(
     """Create a new user. Super Admin can create Managers & Employees; Managers can create their team employees."""
     is_super = _check_is_super(current_user)
 
-    # Non-super-admin managers can only create employees with SALES role
-    if not is_super and payload.role != UserRole.SALES:
-        raise PermissionDeniedException("Managers can only create employees with the SALES role. Super Admin creates Managers.")
+    role_repo = RoleRepository(db)
+    target_role_str = payload.role if isinstance(payload.role, str) else payload.role.value
+    db_role = None
+    if payload.role_id:
+        db_role = role_repo.get_by_id(payload.role_id)
+        if db_role:
+            target_role_str = db_role.name
+    elif target_role_str:
+        db_role = role_repo.get_by_name(target_role_str)
+
+    # Non-super-admin managers can only create operational staff
+    if not is_super and target_role_str in ["ADMIN", "MANAGER"]:
+        raise PermissionDeniedException("Managers can only create operational staff. Super Admin creates Managers & Admins.")
 
     repo = UserRepository(db)
     clean_email = payload.email.lower().strip()
@@ -82,14 +93,15 @@ def create_user(
         raise DuplicateResourceException("User", "email", clean_email)
 
     assigned_manager_id = payload.manager_id if is_super else current_user.id
-    if is_super and not assigned_manager_id and payload.role == UserRole.SALES:
+    if is_super and not assigned_manager_id and target_role_str == "SALES":
         assigned_manager_id = current_user.id
 
     new_user = User(
         email=clean_email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name.strip(),
-        role=payload.role,
+        role=target_role_str,
+        role_id=db_role.id if db_role else None,
         is_active=payload.is_active if payload.is_active is not None else True,
         is_super_admin=False,
         manager_id=assigned_manager_id,
@@ -100,6 +112,8 @@ def create_user(
         if not is_super:
             screens = [s for s in screens if s != "users"]
         new_user.allowed_screens = screens
+    elif db_role and db_role.allowed_screens:
+        new_user.allowed_screens = db_role.allowed_screens.split(",")
 
     repo.create(new_user)
     db.commit()
@@ -162,8 +176,18 @@ def update_user(
 
     if payload.full_name:
         user.full_name = payload.full_name.strip()
-    if payload.role and is_super and not user.is_super_admin:
-        user.role = payload.role
+    if (payload.role or payload.role_id) and is_super and not user.is_super_admin:
+        role_repo = RoleRepository(db)
+        if payload.role_id:
+            db_role = role_repo.get_by_id(payload.role_id)
+            if db_role:
+                user.role_id = db_role.id
+                user.role = db_role.name
+        elif payload.role:
+            target_role = payload.role if isinstance(payload.role, str) else payload.role.value
+            user.role = target_role
+            db_role = role_repo.get_by_name(target_role)
+            user.role_id = db_role.id if db_role else None
     if payload.manager_id is not None and is_super and not user.is_super_admin:
         user.manager_id = payload.manager_id
     if payload.is_active is not None and not user.is_super_admin:

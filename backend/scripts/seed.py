@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), ".."
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
+from app.models.role import Role
 from app.models.customer import Customer
 from app.models.product import Product
 from app.models.inventory import InventoryMovement, MovementType
@@ -42,6 +43,7 @@ def seed_database() -> None:
             db.execute(text("DELETE FROM customers;"))
             db.execute(text("DELETE FROM email_logs;"))
             db.execute(text("DELETE FROM users;"))
+            db.execute(text("DELETE FROM roles;"))
             db.execute(text("DELETE FROM system_settings;"))
         finally:
             if dialect == "sqlite":
@@ -90,7 +92,76 @@ def seed_database() -> None:
 
         db.flush()
 
-        # 2. Users (Exactly One Super Admin, Multiple Regional Managers, and Scoped Employees)
+        # 2. Dynamic Roles Table
+        roles_data = [
+            {
+                "name": "ADMIN",
+                "display_name": "System Administrator",
+                "description": "Full administrative control, user management, and system settings",
+                "is_system": True,
+                "allowed_screens": "dashboard,orders,products,customers,inventory,approvals,settings,users,audit",
+                "can_create_orders": True,
+                "can_approve_orders": True,
+                "can_adjust_stock": True,
+                "can_manage_products": True,
+                "can_manage_customers": True,
+                "can_manage_users": True,
+                "can_manage_settings": True,
+                "can_view_audit": True,
+            },
+            {
+                "name": "MANAGER",
+                "display_name": "Regional Manager",
+                "description": "Review/approve orders, adjust stock, manage catalog, settings",
+                "is_system": True,
+                "allowed_screens": "dashboard,orders,products,customers,inventory,approvals,settings,users,audit",
+                "can_create_orders": True,
+                "can_approve_orders": True,
+                "can_adjust_stock": True,
+                "can_manage_products": True,
+                "can_manage_customers": True,
+                "can_manage_users": True,
+                "can_manage_settings": True,
+                "can_view_audit": True,
+            },
+            {
+                "name": "SALES",
+                "display_name": "Sales Representative",
+                "description": "Create sales orders, view catalog, register customers",
+                "is_system": True,
+                "allowed_screens": "dashboard,orders,products,customers,inventory",
+                "can_create_orders": True,
+                "can_manage_customers": True,
+            },
+            {
+                "name": "WAREHOUSE",
+                "display_name": "Warehouse Specialist",
+                "description": "Physical stock adjustments, inward restock, movement ledger, fulfillment",
+                "is_system": True,
+                "allowed_screens": "dashboard,orders,products,inventory",
+                "can_adjust_stock": True,
+            },
+            {
+                "name": "FINANCE",
+                "display_name": "Finance & Auditor",
+                "description": "Order audit, tax invoices, email logs, transaction statistics (read-only stock)",
+                "is_system": True,
+                "allowed_screens": "dashboard,orders,customers,inventory,audit",
+                "can_view_audit": True,
+            },
+        ]
+
+        role_map = {}
+        for r_data in roles_data:
+            role_obj = db.query(Role).filter_by(name=r_data["name"]).first()
+            if not role_obj:
+                role_obj = Role(**r_data)
+                db.add(role_obj)
+                db.flush()
+                logger.info(f"Seeded Dynamic Role: {role_obj.name} ({role_obj.display_name})")
+            role_map[r_data["name"]] = role_obj
+
+        # 3. Users (Exactly One Super Admin, Multiple Regional Managers, and Scoped Employees)
         # First create the single Super Admin
         super_admin = db.query(User).filter_by(email="manager@sims.in").first()
         if not super_admin:
@@ -98,7 +169,8 @@ def seed_database() -> None:
                 email="manager@sims.in",
                 hashed_password=get_password_hash("Manager@123456"),
                 full_name="Rajesh Sharma",
-                role=UserRole.MANAGER,
+                role="MANAGER",
+                role_id=role_map["MANAGER"].id,
                 is_active=True,
                 is_super_admin=True,
             )
@@ -107,6 +179,7 @@ def seed_database() -> None:
             logger.info("Seeded Sole Super Admin: manager@sims.in")
         else:
             super_admin.is_super_admin = True
+            super_admin.role_id = role_map["MANAGER"].id
             db.flush()
 
         # Regional Managers created by Super Admin
@@ -143,12 +216,15 @@ def seed_database() -> None:
         mgr_map = {}
         for m_data in managers_data:
             existing = db.query(User).filter_by(email=m_data["email"]).first()
+            m_role_str = m_data["role"].value if hasattr(m_data["role"], "value") else str(m_data["role"])
+            role_record = role_map.get(m_role_str)
             if not existing:
                 new_mgr = User(
                     email=m_data["email"],
                     hashed_password=get_password_hash(m_data["password"]),
                     full_name=m_data["full_name"],
-                    role=m_data["role"],
+                    role=m_role_str,
+                    role_id=role_record.id if role_record else None,
                     is_active=True,
                     is_super_admin=m_data["is_super_admin"],
                     manager_id=m_data["manager_id"],
@@ -159,6 +235,7 @@ def seed_database() -> None:
                 mgr_map[m_data["email"]] = new_mgr
                 logger.info(f"Seeded Manager: {m_data['email']}")
             else:
+                existing.role_id = role_record.id if role_record else None
                 mgr_map[m_data["email"]] = existing
 
         priya_mgr = mgr_map.get("priya.manager@sims.in") or super_admin
@@ -204,23 +281,52 @@ def seed_database() -> None:
                 "manager_id": vikram_mgr.id,
                 "created_by_id": vikram_mgr.id,
             },
+            # Dedicated Operational Specialists
+            {
+                "email": "warehouse@sims.in",
+                "full_name": "Ramesh Kumar",
+                "password": "Warehouse@123456",
+                "role": UserRole.WAREHOUSE,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
+                "allowed_screens": "dashboard,orders,products,inventory",
+            },
+            {
+                "email": "finance@sims.in",
+                "full_name": "Neha Gupta",
+                "password": "Finance@123456",
+                "role": UserRole.FINANCE,
+                "manager_id": super_admin.id,
+                "created_by_id": super_admin.id,
+                "allowed_screens": "dashboard,orders,customers,inventory,audit",
+            },
         ]
 
         for e_data in employees_data:
             existing = db.query(User).filter_by(email=e_data["email"]).first()
+            e_role = e_data.get("role", UserRole.SALES)
+            e_role_str = e_role.value if hasattr(e_role, "value") else str(e_role)
+            role_record = role_map.get(e_role_str)
             if not existing:
                 new_emp = User(
                     email=e_data["email"],
                     hashed_password=get_password_hash(e_data["password"]),
                     full_name=e_data["full_name"],
-                    role=UserRole.SALES,
+                    role=e_role_str,
+                    role_id=role_record.id if role_record else None,
                     is_active=True,
                     is_super_admin=False,
                     manager_id=e_data["manager_id"],
                     created_by_id=e_data["created_by_id"],
                 )
+                if "allowed_screens" in e_data:
+                    new_emp.allowed_screens = e_data["allowed_screens"]
+                elif role_record and role_record.allowed_screens:
+                    new_emp.allowed_screens = role_record.allowed_screens.split(",")
                 db.add(new_emp)
-                logger.info(f"Seeded Employee: {e_data['email']} under Manager ID {e_data['manager_id']}")
+                logger.info(f"Seeded User: {e_data['email']} ({e_role_str})")
+            else:
+                existing.role_id = role_record.id if role_record else None
 
         db.flush()
 

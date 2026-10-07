@@ -21,7 +21,7 @@ def get_email_logs(
     status: Optional[EmailStatus] = Query(None, description="Filter by delivery status"),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER, UserRole.FINANCE)),
 ):
     """Retrieve transactional email notification audit logs."""
     query = db.query(EmailLog)
@@ -33,7 +33,7 @@ def get_email_logs(
 @router.get("/stats", response_model=AuditStatsResponse)
 def get_audit_stats(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER, UserRole.FINANCE)),
 ):
     """Aggregated metrics for email deliveries and system activity."""
     total = db.query(EmailLog).count()

@@ -36,6 +36,8 @@ class ProductResponse(BaseModel):
     price: Decimal
     cost_price: Optional[Decimal] = None
     stock_quantity: int
+    reserved_quantity: int = 0
+    available_stock: int = 0
     reorder_level: int
     is_active: bool
     is_deleted: bool = False

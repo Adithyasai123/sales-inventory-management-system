@@ -1,5 +1,6 @@
 from app.core.database import Base
 from app.models.base import TimestampMixin, SoftDeleteMixin
+from app.models.role import Role
 from app.models.user import User, UserRole
 from app.models.customer import Customer
 from app.models.product import Product
@@ -14,6 +15,7 @@ __all__ = [
     "Base",
     "TimestampMixin",
     "SoftDeleteMixin",
+    "Role",
     "User",
     "UserRole",
     "Customer",

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 import re
 from pydantic import BaseModel, Field, field_validator
 from app.models.user import UserRole
@@ -11,7 +11,8 @@ class UserCreate(BaseModel):
     email: str = Field(..., max_length=255)
     password: str = Field(..., min_length=6, description="Password with minimum 6 characters")
     full_name: str = Field(..., min_length=2, max_length=100)
-    role: UserRole = UserRole.SALES
+    role: Union[UserRole, str] = "SALES"
+    role_id: Optional[int] = None
     is_active: Optional[bool] = True
     manager_id: Optional[int] = None
     allowed_screens: Optional[List[str]] = None
@@ -24,12 +25,18 @@ class UserCreate(BaseModel):
             raise ValueError("Invalid email address format")
         return v
 
+    @field_validator("role")
+    @classmethod
+    def normalize_role(cls, v: Union[UserRole, str]) -> str:
+        return v.value if hasattr(v, "value") else str(v).strip().upper()
+
 
 class UserUpdate(BaseModel):
     email: Optional[str] = Field(None, max_length=255)
     password: Optional[str] = Field(None, min_length=6)
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
-    role: Optional[UserRole] = None
+    role: Optional[Union[UserRole, str]] = None
+    role_id: Optional[int] = None
     is_active: Optional[bool] = None
     manager_id: Optional[int] = None
     allowed_screens: Optional[List[str]] = None
@@ -44,12 +51,20 @@ class UserUpdate(BaseModel):
             raise ValueError("Invalid email address format")
         return v
 
+    @field_validator("role")
+    @classmethod
+    def normalize_role(cls, v: Optional[Union[UserRole, str]]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.value if hasattr(v, "value") else str(v).strip().upper()
+
 
 class UserResponse(BaseModel):
     id: int
     email: str
     full_name: str
-    role: UserRole
+    role: Union[UserRole, str]
+    role_id: Optional[int] = None
     is_active: bool
     is_super_admin: bool = False
     manager_id: Optional[int] = None

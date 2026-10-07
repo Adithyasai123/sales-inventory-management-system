@@ -81,18 +81,19 @@ class OrderService:
                 raise EntityNotFoundException("Active Product", pid)
             products_map[pid] = p
 
-        # 4. Validate Stock and Calculate Totals server-side
+        # 4. Validate Available Stock and Calculate Totals server-side
         subtotal = Decimal("0.00")
         items_to_create: List[Dict[str, Any]] = []
 
         for item_in in payload.items:
             product = products_map[item_in.product_id]
-            if product.stock_quantity < item_in.quantity:
+            avail_stock = product.stock_quantity - getattr(product, "reserved_quantity", 0)
+            if avail_stock < item_in.quantity:
                 raise InsufficientStockException(
                     product_id=product.id,
                     sku=product.sku,
                     requested=item_in.quantity,
-                    available=product.stock_quantity,
+                    available=max(0, avail_stock),
                 )
             
             line_price = Decimal(str(product.price))
@@ -149,33 +150,37 @@ class OrderService:
             )
             self.db.add(order_item)
 
-        # 7. If total <= threshold: Auto-completed -> Lock and Deduct stock immediately
-        if not requires_approval:
-            locked_products = self.product_repo.get_for_update(product_ids)
-            locked_map = {p.id: p for p in locked_products}
+        # 7. Stock Allocation:
+        # Lock products in deterministic ascending order to prevent deadlocks
+        locked_products = self.product_repo.get_for_update(product_ids)
+        locked_map = {p.id: p for p in locked_products}
 
+        if requires_approval:
+            # High-value orders: atomically RESERVE stock so it cannot be oversold while pending
             for item_in in payload.items:
                 prod = locked_map[item_in.product_id]
-                affected = (
-                    self.db.query(Product)
-                    .filter(
-                        Product.id == prod.id,
-                        Product.stock_quantity >= item_in.quantity,
-                        Product.is_deleted == False,
-                    )
-                    .update(
-                        {Product.stock_quantity: Product.stock_quantity - item_in.quantity},
-                        synchronize_session="fetch",
-                    )
-                )
-                if affected == 0:
-                    self.db.refresh(prod)
+                avail = prod.stock_quantity - prod.reserved_quantity
+                if avail < item_in.quantity:
                     raise InsufficientStockException(
                         product_id=prod.id,
                         sku=prod.sku,
                         requested=item_in.quantity,
-                        available=prod.stock_quantity,
+                        available=max(0, avail),
                     )
+                prod.reserved_quantity += item_in.quantity
+        else:
+            # Total <= threshold: auto-completed -> deduct physical stock and record movement
+            for item_in in payload.items:
+                prod = locked_map[item_in.product_id]
+                avail = prod.stock_quantity - prod.reserved_quantity
+                if avail < item_in.quantity:
+                    raise InsufficientStockException(
+                        product_id=prod.id,
+                        sku=prod.sku,
+                        requested=item_in.quantity,
+                        available=max(0, avail),
+                    )
+                prod.stock_quantity -= item_in.quantity
                 self.inventory_repo.record_movement(
                     product_id=prod.id,
                     movement_type=MovementType.OUT,
@@ -208,7 +213,7 @@ class OrderService:
             else:
                 EmailService._send_smtp_email(to_email, subject, html_body, log_id)
 
-        logger.info(f"Order created: {order.order_number} (Status: {order.status.value}, Total: ${order.total_amount})")
+        logger.info(f"Order created: {order.order_number} (Status: {order.status.value}, Total: ₹{order.total_amount})")
         return self.order_repo.get_with_details(order.id)
 
     def cancel_order(self, order_id: int, user: User) -> SalesOrder:
@@ -223,6 +228,16 @@ class OrderService:
                 target_state=OrderStatus.CANCELLED.value,
                 reason="Only orders in DRAFT or PENDING_APPROVAL status can be cancelled.",
             )
+
+        # If order was PENDING_APPROVAL, release any reserved stock
+        if order.status == OrderStatus.PENDING_APPROVAL and order.items:
+            product_ids = [item.product_id for item in order.items]
+            locked_products = self.product_repo.get_for_update(product_ids)
+            locked_map = {p.id: p for p in locked_products}
+            for item in order.items:
+                prod = locked_map.get(item.product_id)
+                if prod:
+                    prod.reserved_quantity = max(0, prod.reserved_quantity - item.quantity)
 
         order.status = OrderStatus.CANCELLED
         self.db.commit()
