@@ -38,14 +38,14 @@ class Settings(BaseSettings):
                 pass
         return [i.strip() for i in val.split(",") if i.strip()]
 
-    # SMTP Configuration (Mailpit by default for local/docker dev)
-    SMTP_HOST: str = "mailpit"
-    SMTP_PORT: int = 1025
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_TLS: bool = False
+    # SMTP Configuration (Live Gmail SMTP defaults so emails deliver reliably in cloud environments)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = "adithyasainulu@gmail.com"
+    SMTP_PASSWORD: str = "cfzmyefbbtxfjjkd"
+    SMTP_TLS: bool = True
     SMTP_SSL: bool = False
-    EMAILS_FROM_EMAIL: str = "noreply@sims.local"
+    EMAILS_FROM_EMAIL: str = "adithyasainulu@gmail.com"
     EMAILS_FROM_NAME: str = "SIMS Notifications"
 
     # Default Business Rules
