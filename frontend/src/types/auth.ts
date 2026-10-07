@@ -71,6 +71,15 @@ export interface Tokens {
   expires_in: number;
 }
 
+export interface LoginResponse {
+  message: string;
+  user?: User;
+}
+
+export interface RefreshResponse {
+  message: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;
