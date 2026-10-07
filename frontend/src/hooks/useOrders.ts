@@ -16,7 +16,6 @@ export function useOrders(params?: {
   return useQuery({
     queryKey: ['orders', params],
     queryFn: () => ordersApi.list(params),
-    refetchInterval: 5000,
   });
 }
 
@@ -25,7 +24,6 @@ export function useOrder(id: number | null) {
     queryKey: ['order', id],
     queryFn: () => ordersApi.get(id!),
     enabled: !!id,
-    refetchInterval: 5000,
   });
 }
 

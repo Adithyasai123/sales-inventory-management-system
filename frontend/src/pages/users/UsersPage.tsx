@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../../hooks/useUsers';
+import { useRoles } from '../../hooks/useRoles';
 import { useAuth } from '../../context/AuthContext';
-import { User, UserRole } from '../../types/auth';
+import { User, UserRole, Role } from '../../types/auth';
+import { RolesTab } from './RolesTab';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Button } from '../../components/ui/Button';
@@ -33,6 +35,8 @@ import {
   User as UserIcon,
   Briefcase,
   UserPlus,
+  Activity,
+  Database,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -85,16 +89,34 @@ const AVAILABLE_SCREENS = [
     icon: UserCheck,
     desc: 'Account security, role definitions, password resets & screen access',
   },
+  {
+    id: 'audit',
+    label: 'Audit & Emails',
+    icon: Activity,
+    desc: 'Audit trail and transaction email delivery logs',
+  },
 ];
 
 const DEFAULT_SALES_SCREENS = ['dashboard', 'orders', 'products', 'customers', 'inventory'];
+const DEFAULT_WAREHOUSE_SCREENS = ['dashboard', 'products', 'inventory', 'orders'];
+const DEFAULT_FINANCE_SCREENS = ['dashboard', 'orders', 'customers', 'inventory', 'audit'];
 const ALL_SCREENS = AVAILABLE_SCREENS.map((s) => s.id);
+
+const getDefaultScreensForRole = (role: UserRole) => {
+  if (role === 'MANAGER' || role === 'ADMIN') return ALL_SCREENS;
+  if (role === 'WAREHOUSE') return DEFAULT_WAREHOUSE_SCREENS;
+  if (role === 'FINANCE') return DEFAULT_FINANCE_SCREENS;
+  return DEFAULT_SALES_SCREENS;
+};
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser, isSuperAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+
+  const { data: rolesData } = useRoles();
 
   const { data, isLoading } = useUsers({
     page,
@@ -115,6 +137,7 @@ export const UsersPage: React.FC = () => {
     password: '',
     full_name: '',
     role: 'SALES' as UserRole,
+    role_id: undefined as number | undefined,
     manager_id: undefined as number | undefined,
     is_active: true,
     allowed_screens: [...DEFAULT_SALES_SCREENS],
@@ -127,6 +150,7 @@ export const UsersPage: React.FC = () => {
     email: '',
     full_name: '',
     role: 'SALES' as UserRole,
+    role_id: undefined as number | undefined,
     manager_id: undefined as number | undefined,
     password: '', // optional password update
     is_active: true,
@@ -156,52 +180,96 @@ export const UsersPage: React.FC = () => {
     }));
   }, [data?.items]);
 
-  // Role select options based on whether current user is Super Admin
+  // Role select options dynamically populated from SQL database
   const roleSelectOptions = useMemo<SelectOption[]>(() => {
+    const roleIconMap: Record<string, any> = {
+      ADMIN: Shield,
+      MANAGER: Briefcase,
+      SALES: UsersIcon,
+      WAREHOUSE: Layers,
+      FINANCE: Activity,
+    };
+
+    if (rolesData && rolesData.length > 0) {
+      return rolesData
+        .filter((r) => isSuperAdmin || (!['MANAGER', 'ADMIN'].includes(r.name) && !r.is_system))
+        .map((r) => ({
+          value: r.name,
+          label: r.display_name,
+          description: r.description || `Authorized Screens: ${r.allowed_screens.join(', ') || 'None'}`,
+          badge: r.display_name,
+          icon: roleIconMap[r.name] || Shield,
+        }));
+    }
+
+    const operationalRoles = [
+      {
+        value: 'SALES',
+        label: 'Sales Representative',
+        description: 'Frontline order creation, client relationships & catalog view',
+        badge: 'Sales',
+        icon: UsersIcon,
+      },
+      {
+        value: 'WAREHOUSE',
+        label: 'Warehouse Specialist',
+        description: 'Physical inventory management, cycle counts & stock adjustments',
+        badge: 'Warehouse',
+        icon: Layers,
+      },
+      {
+        value: 'FINANCE',
+        label: 'Finance & Auditor',
+        description: 'Audit transactional email trails, invoice records & compliance logs',
+        badge: 'Finance',
+        icon: Activity,
+      },
+    ];
+
     if (isSuperAdmin) {
       return [
-        {
-          value: 'SALES',
-          label: 'Sales Representative',
-          description: 'Team employee with assigned client orders and catalog access',
-          badge: 'Employee',
-          icon: UsersIcon,
-        },
+        ...operationalRoles,
         {
           value: 'MANAGER',
           label: 'Regional Manager',
-          description: 'Can create and manage their own team employees & approvals',
+          description: 'Can create and manage their own team employees & order approvals',
           badge: 'Manager',
           icon: Briefcase,
         },
         {
           value: 'ADMIN',
           label: 'System Administrator',
-          description: 'System-level operational configurations & inventory access',
+          description: 'System-level operational configurations & full access',
           badge: 'Admin',
           icon: Shield,
         },
       ];
     }
-    // Non-super managers can only create SALES employees
-    return [
-      {
-        value: 'SALES',
-        label: 'Sales Representative',
-        description: 'Team employee directly reporting to you',
-        badge: 'Employee',
-        icon: UsersIcon,
-      },
-    ];
-  }, [isSuperAdmin]);
+    return operationalRoles;
+  }, [rolesData, isSuperAdmin]);
 
-  // Role filter options for the table toolbar
-  const roleFilterOptions: SelectOption[] = [
-    { value: 'ALL', label: 'All Roles' },
-    { value: 'MANAGER', label: 'Managers', badge: 'Manager' },
-    { value: 'SALES', label: 'Sales Reps', badge: 'Sales' },
-    { value: 'ADMIN', label: 'Administrators', badge: 'Admin' },
-  ];
+  // Role filter options for the table toolbar (from DB)
+  const roleFilterOptions = useMemo<SelectOption[]>(() => {
+    const base: SelectOption[] = [{ value: 'ALL', label: 'All Roles' }];
+    if (rolesData && rolesData.length > 0) {
+      return [
+        ...base,
+        ...rolesData.map((r) => ({
+          value: r.name,
+          label: r.display_name,
+          badge: r.display_name,
+        })),
+      ];
+    }
+    return [
+      ...base,
+      { value: 'MANAGER', label: 'Managers', badge: 'Manager' },
+      { value: 'SALES', label: 'Sales Reps', badge: 'Sales' },
+      { value: 'WAREHOUSE', label: 'Warehouse', badge: 'Warehouse' },
+      { value: 'FINANCE', label: 'Finance', badge: 'Finance' },
+      { value: 'ADMIN', label: 'Administrators', badge: 'Admin' },
+    ];
+  }, [rolesData]);
 
   // Non-SuperAdmin managers can never assign the 'users' screen to any user
   const assignableScreens = useMemo(() => {
@@ -215,14 +283,16 @@ export const UsersPage: React.FC = () => {
   }, [assignableScreens]);
 
   const handleOpenCreate = () => {
+    const salesDbRole = rolesData?.find((r) => r.name === 'SALES');
     setCreateForm({
       email: '',
       password: '',
       full_name: '',
       role: 'SALES',
+      role_id: salesDbRole?.id,
       manager_id: isSuperAdmin ? undefined : currentUser?.id,
       is_active: true,
-      allowed_screens: [...DEFAULT_SALES_SCREENS],
+      allowed_screens: salesDbRole?.allowed_screens?.length ? [...salesDbRole.allowed_screens] : [...DEFAULT_SALES_SCREENS],
     });
     setCreateShowPassword(false);
     setIsCreateDrawerOpen(true);
@@ -230,10 +300,12 @@ export const UsersPage: React.FC = () => {
 
   const handleOpenEdit = (u: User) => {
     setEditingUser(u);
+    const dbRole = rolesData?.find((r) => r.id === u.role_id || r.name === u.role);
     setEditForm({
       email: u.email,
       full_name: u.full_name,
       role: u.role,
+      role_id: u.role_id || dbRole?.id,
       manager_id: u.manager_id || undefined,
       password: '',
       is_active: u.is_active,
@@ -242,6 +314,8 @@ export const UsersPage: React.FC = () => {
           ? (isSuperAdmin ? [...ALL_SCREENS] : [...allAssignableIds])
           : u.allowed_screens && u.allowed_screens.length > 0
           ? u.allowed_screens.filter((s) => isSuperAdmin ? true : s !== 'users')
+          : dbRole?.allowed_screens?.length
+          ? [...dbRole.allowed_screens]
           : [...DEFAULT_SALES_SCREENS],
     });
     setEditShowPassword(false);
@@ -261,11 +335,14 @@ export const UsersPage: React.FC = () => {
     const finalScreens = (createForm.role === 'MANAGER' ? allAssignableIds : createForm.allowed_screens)
       .filter((s) => (isSuperAdmin ? true : s !== 'users'));
 
+    const dbRole = rolesData?.find((r) => r.name === createForm.role || r.id === createForm.role_id);
+
     await createUserMutation.mutateAsync({
       email: cleanEmail,
       password: createForm.password,
       full_name: createForm.full_name.trim(),
       role: createForm.role,
+      role_id: createForm.role_id || dbRole?.id,
       manager_id: createForm.manager_id || currentUser?.id,
       is_active: createForm.is_active,
       allowed_screens: finalScreens,
@@ -289,10 +366,13 @@ export const UsersPage: React.FC = () => {
     const finalScreens = (editForm.role === 'MANAGER' ? allAssignableIds : editForm.allowed_screens)
       .filter((s) => (isSuperAdmin ? true : s !== 'users'));
 
+    const dbRole = rolesData?.find((r) => r.name === editForm.role || r.id === editForm.role_id);
+
     const payload: any = {
       email: cleanEmail,
       full_name: editForm.full_name.trim(),
       role: editForm.role,
+      role_id: editForm.role_id || dbRole?.id,
       manager_id: isSuperAdmin ? editForm.manager_id : editingUser.manager_id,
       is_active: editForm.is_active,
       allowed_screens: finalScreens,
@@ -332,6 +412,8 @@ export const UsersPage: React.FC = () => {
     MANAGER: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold',
     ADMIN: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30 font-semibold',
     SALES: 'bg-surfaceAlt text-text border-border font-medium',
+    WAREHOUSE: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-medium',
+    FINANCE: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-medium',
   };
 
   const columns: Column<User>[] = [
@@ -362,23 +444,48 @@ export const UsersPage: React.FC = () => {
       key: 'role',
       header: 'Assigned Role',
       width: '150px',
-      render: (u) => (
-        <span
-          className={cn(
-            'px-2.5 py-0.5 rounded-full text-[11px] border inline-flex items-center gap-1',
-            roleStyles[u.role] || 'bg-surfaceAlt text-text border-border'
-          )}
-        >
-          {u.is_super_admin ? (
-            <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
-          ) : u.role === 'MANAGER' ? (
-            <Shield className="w-3 h-3 text-blue-500 shrink-0" />
-          ) : (
-            <UsersIcon className="w-3 h-3 text-muted shrink-0" />
-          )}
-          {u.is_super_admin ? 'Super Admin' : u.role === 'MANAGER' ? 'Manager' : u.role === 'ADMIN' ? 'Admin' : 'Sales Rep'}
-        </span>
-      ),
+      render: (u) => {
+        const dbRole = rolesData?.find((r) => r.id === u.role_id || r.name === u.role);
+        const displayName =
+          dbRole?.display_name ||
+          (u.is_super_admin
+            ? 'Super Admin'
+            : u.role === 'MANAGER'
+            ? 'Manager'
+            : u.role === 'ADMIN'
+            ? 'Admin'
+            : u.role === 'WAREHOUSE'
+            ? 'Warehouse'
+            : u.role === 'FINANCE'
+            ? 'Finance'
+            : u.role === 'SALES'
+            ? 'Sales Rep'
+            : u.role);
+
+        return (
+          <span
+            className={cn(
+              'px-2.5 py-0.5 rounded-full text-[11px] border inline-flex items-center gap-1',
+              roleStyles[u.role] || 'bg-surfaceAlt text-text border-border'
+            )}
+          >
+            {u.is_super_admin ? (
+              <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
+            ) : u.role === 'MANAGER' ? (
+              <Shield className="w-3 h-3 text-blue-500 shrink-0" />
+            ) : u.role === 'ADMIN' ? (
+              <Shield className="w-3 h-3 text-purple-500 shrink-0" />
+            ) : u.role === 'WAREHOUSE' ? (
+              <Layers className="w-3 h-3 text-amber-500 shrink-0" />
+            ) : u.role === 'FINANCE' ? (
+              <Activity className="w-3 h-3 text-emerald-500 shrink-0" />
+            ) : (
+              <UsersIcon className="w-3 h-3 text-muted shrink-0" />
+            )}
+            {displayName}
+          </span>
+        );
+      },
     },
     {
       key: 'allowed_screens',
@@ -514,103 +621,158 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="flex flex-col gap-6 w-full">
       <PageHeader
-        title={isSuperAdmin ? 'User Administration' : 'My Team Management'}
+        title={isSuperAdmin ? 'User & Access Administration' : 'My Team & Access Management'}
         subtitle={
           isSuperAdmin
-            ? 'Super Admin Portal: create and manage regional managers, allocate employee teams, and configure granular screen permissions.'
-            : 'Manage your direct sales employees, reset credentials, toggle active status, and configure authorized screens.'
+            ? 'Enterprise RBAC: Provision team members, configure granular screen authorization, and manage dynamic SQL database roles.'
+            : 'Manage direct sales employees, configure screen permissions, and inspect assigned database capabilities.'
         }
         action={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleOpenCreate}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            {isSuperAdmin ? 'Add New User' : 'Add Team Member'}
-          </Button>
+          activeTab === 'users' ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenCreate}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              {isSuperAdmin ? 'Add New User' : 'Add Team Member'}
+            </Button>
+          ) : undefined
         }
       />
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
-          <div className="text-caption text-muted font-medium flex items-center justify-between">
-            <span>{isSuperAdmin ? 'Total System Accounts' : 'My Team Members'}</span>
-            <UsersIcon className="w-4 h-4 text-accent" />
-          </div>
-          <div className="text-2xl font-bold text-text mt-1.5">
+      {/* Primary Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-border pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('users')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all',
+            activeTab === 'users'
+              ? 'bg-accent text-white shadow-sm'
+              : 'text-muted hover:text-text hover:bg-surfaceAlt'
+          )}
+        >
+          <UsersIcon className="w-4 h-4" />
+          <span>User Directory</span>
+          <span
+            className={cn(
+              'ml-1 px-1.5 py-0.2 rounded-full text-[10px]',
+              activeTab === 'users' ? 'bg-white/20 text-white' : 'bg-surfaceAlt text-muted'
+            )}
+          >
             {data?.total ?? 0}
-          </div>
-        </div>
+          </span>
+        </button>
 
-        <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
-          <div className="text-caption text-muted font-medium flex items-center justify-between">
-            <span>Active Users</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">
-            {data?.items.filter((u) => u.is_active).length ?? 0}
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
-          <div className="text-caption text-muted font-medium flex items-center justify-between">
-            <span>Sales Employees</span>
-            <UsersIcon className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-2xl font-bold text-text mt-1.5">
-            {data?.items.filter((u) => u.role === 'SALES').length ?? 0}
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
-          <div className="text-caption text-muted font-medium flex items-center justify-between">
-            <span>{isSuperAdmin ? 'Super Admins & Managers' : 'Inactive Members'}</span>
-            <Shield className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="text-2xl font-bold text-text mt-1.5">
-            {isSuperAdmin
-              ? data?.items.filter((u) => u.role === 'MANAGER' || u.is_super_admin).length ?? 0
-              : data?.items.filter((u) => !u.is_active).length ?? 0}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('roles')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all',
+            activeTab === 'roles'
+              ? 'bg-accent text-white shadow-sm'
+              : 'text-muted hover:text-text hover:bg-surfaceAlt'
+          )}
+        >
+          <Database className="w-4 h-4" />
+          <span>Dynamic SQL Roles &amp; RBAC</span>
+          <span
+            className={cn(
+              'ml-1 px-1.5 py-0.2 rounded-full text-[10px]',
+              activeTab === 'roles' ? 'bg-white/20 text-white' : 'bg-surfaceAlt text-muted'
+            )}
+          >
+            {rolesData?.length ?? 5}
+          </span>
+        </button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data?.items}
-        total={data?.total}
-        page={page}
-        pageSize={20}
-        totalPages={data?.total_pages}
-        isLoading={isLoading}
-        onPageChange={setPage}
-        searchPlaceholder={
-          isSuperAdmin
-            ? 'Search all system users by name or email...'
-            : 'Search your team members by name or email...'
-        }
-        searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        filters={
-          <div className="w-48">
-            <SearchableSelect
-              value={roleFilter}
-              onChange={(val) => {
-                setRoleFilter(val);
-                setPage(1);
-              }}
-              options={roleFilterOptions}
-              placeholder="Filter by Role"
-              minSearchCount={10}
-            />
+      {activeTab === 'roles' ? (
+        <RolesTab isSuperAdmin={isSuperAdmin} />
+      ) : (
+        <>
+          {/* Summary KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
+              <div className="text-caption text-muted font-medium flex items-center justify-between">
+                <span>{isSuperAdmin ? 'Total System Accounts' : 'My Team Members'}</span>
+                <UsersIcon className="w-4 h-4 text-accent" />
+              </div>
+              <div className="text-2xl font-bold text-text mt-1.5">
+                {data?.total ?? 0}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
+              <div className="text-caption text-muted font-medium flex items-center justify-between">
+                <span>Active Users</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">
+                {data?.items.filter((u) => u.is_active).length ?? 0}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
+              <div className="text-caption text-muted font-medium flex items-center justify-between">
+                <span>Sales Employees</span>
+                <UsersIcon className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="text-2xl font-bold text-text mt-1.5">
+                {data?.items.filter((u) => u.role === 'SALES').length ?? 0}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm">
+              <div className="text-caption text-muted font-medium flex items-center justify-between">
+                <span>{isSuperAdmin ? 'Super Admins & Managers' : 'Inactive Members'}</span>
+                <Shield className="w-4 h-4 text-purple-500" />
+              </div>
+              <div className="text-2xl font-bold text-text mt-1.5">
+                {isSuperAdmin
+                  ? data?.items.filter((u) => u.role === 'MANAGER' || u.is_super_admin).length ?? 0
+                  : data?.items.filter((u) => !u.is_active).length ?? 0}
+              </div>
+            </div>
           </div>
-        }
-      />
+
+          <DataTable
+            columns={columns}
+            data={data?.items}
+            total={data?.total}
+            page={page}
+            pageSize={20}
+            totalPages={data?.total_pages}
+            isLoading={isLoading}
+            onPageChange={setPage}
+            searchPlaceholder={
+              isSuperAdmin
+                ? 'Search all system users by name or email...'
+                : 'Search your team members by name or email...'
+            }
+            searchValue={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            filters={
+              <div className="w-48">
+                <SearchableSelect
+                  value={roleFilter}
+                  onChange={(val) => {
+                    setRoleFilter(val);
+                    setPage(1);
+                  }}
+                  options={roleFilterOptions}
+                  placeholder="Filter by Role"
+                  minSearchCount={10}
+                />
+              </div>
+            }
+          />
+        </>
+      )}
 
       {/* CREATE USER DRAWER (EXPACIOUS SLIDEOVER) */}
       <SlideOver
@@ -669,10 +831,14 @@ export const UsersPage: React.FC = () => {
                   value={createForm.role}
                   onChange={(val) => {
                     const role = val as UserRole;
+                    const dbRole = rolesData?.find((r) => r.name === role);
                     setCreateForm({
                       ...createForm,
                       role,
-                      allowed_screens: role === 'MANAGER' ? ALL_SCREENS : DEFAULT_SALES_SCREENS,
+                      role_id: dbRole?.id,
+                      allowed_screens: dbRole?.allowed_screens?.length
+                        ? [...dbRole.allowed_screens]
+                        : getDefaultScreensForRole(role),
                     });
                   }}
                   options={roleSelectOptions}
@@ -680,7 +846,7 @@ export const UsersPage: React.FC = () => {
                 />
               </div>
 
-              {isSuperAdmin && createForm.role === 'SALES' && (
+              {isSuperAdmin && ['SALES', 'WAREHOUSE', 'FINANCE'].includes(createForm.role) && (
                 <div>
                   <SearchableSelect
                     label="Assign to Regional Manager"
@@ -928,10 +1094,17 @@ export const UsersPage: React.FC = () => {
                   value={editForm.role}
                   onChange={(val) => {
                     const role = val as UserRole;
+                    const dbRole = rolesData?.find((r) => r.name === role);
                     setEditForm({
                       ...editForm,
                       role,
-                      allowed_screens: role === 'MANAGER' ? ALL_SCREENS : editForm.allowed_screens,
+                      role_id: dbRole?.id,
+                      allowed_screens:
+                        role === 'MANAGER'
+                          ? ALL_SCREENS
+                          : dbRole?.allowed_screens?.length
+                          ? [...dbRole.allowed_screens]
+                          : editForm.allowed_screens,
                     });
                   }}
                   options={roleSelectOptions}
@@ -939,7 +1112,7 @@ export const UsersPage: React.FC = () => {
                 />
               </div>
 
-              {isSuperAdmin && editForm.role === 'SALES' && (
+              {isSuperAdmin && ['SALES', 'WAREHOUSE', 'FINANCE'].includes(editForm.role) && (
                 <div>
                   <SearchableSelect
                     label="Assigned Regional Manager"

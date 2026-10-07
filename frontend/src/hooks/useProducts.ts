@@ -11,6 +11,7 @@ export function useProducts(params?: {
   category?: string;
   is_low_stock?: boolean;
   is_active?: boolean;
+  include_deleted?: boolean;
   sort_by?: string;
   sort_order?: string;
 }) {
@@ -69,6 +70,21 @@ export function useDeleteProduct() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product soft-deleted.');
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+}
+
+export function useRestoreProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productsApi.restore(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(`Product "${data.name}" restored successfully.`);
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));

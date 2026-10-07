@@ -58,7 +58,7 @@ export const App: React.FC = () => {
             <Route
               path="/orders/create"
               element={
-                <ProtectedRoute screenId="orders">
+                <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'SALES']} screenId="orders">
                   <CreateOrderPage />
                 </ProtectedRoute>
               }
@@ -76,7 +76,7 @@ export const App: React.FC = () => {
             <Route
               path="/customers"
               element={
-                <ProtectedRoute screenId="customers">
+                <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'SALES', 'FINANCE']} screenId="customers">
                   <CustomersPage />
                 </ProtectedRoute>
               }
@@ -124,7 +124,7 @@ export const App: React.FC = () => {
             <Route
               path="/audit"
               element={
-                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+                <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN', 'FINANCE']}>
                   <AuditLogsPage />
                 </ProtectedRoute>
               }

@@ -5,6 +5,7 @@ import {
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
+  useRestoreProduct,
   useAdjustStock,
 } from '../../hooks/useProducts';
 import { Product, ProductInput, StockAdjustPayload } from '../../types/product';
@@ -14,15 +15,17 @@ import { Button } from '../../components/ui/Button';
 import { FormField, Input, Select, Textarea } from '../../components/ui/FormField';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatCurrency } from '../../lib/utils';
-import { Plus, SlidersHorizontal, Trash2, Edit3, AlertTriangle, Layers } from 'lucide-react';
+import { Plus, SlidersHorizontal, Trash2, Edit3, AlertTriangle, Layers, RotateCcw } from 'lucide-react';
 
 export const ProductsPage: React.FC = () => {
-  const { isManager } = useAuth();
+  const { isManager, isWarehouse } = useAuth();
+  const canAdjustStock = isManager || isWarehouse;
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [isLowStock, setIsLowStock] = useState<boolean | undefined>(undefined);
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   const { data, isLoading } = useProducts({
     page,
@@ -30,11 +33,13 @@ export const ProductsPage: React.FC = () => {
     search: search || undefined,
     category: category || undefined,
     is_low_stock: isLowStock,
+    include_deleted: includeDeleted,
   });
 
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
+  const restoreProductMutation = useRestoreProduct();
   const adjustStockMutation = useAdjustStock();
 
   // Modals state
@@ -119,7 +124,16 @@ export const ProductsPage: React.FC = () => {
       key: 'sku',
       header: 'SKU',
       width: '140px',
-      className: 'font-mono text-[11px] text-body',
+      render: (p) => (
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-[11px] text-body">{p.sku}</span>
+          {p.is_deleted && (
+            <span className="text-[10px] uppercase font-semibold px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+              Archived
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'name',
@@ -158,7 +172,9 @@ export const ProductsPage: React.FC = () => {
       header: 'Available Stock',
       width: '240px',
       render: (p) => {
-        const isLow = p.stock_quantity <= p.reorder_level;
+        const avail = p.available_stock !== undefined ? p.available_stock : Math.max(0, p.stock_quantity - (p.reserved_quantity || 0));
+        const reserved = p.reserved_quantity || 0;
+        const isLow = avail <= p.reorder_level;
         return (
           <div className="flex items-center gap-2">
             <span
@@ -166,14 +182,19 @@ export const ProductsPage: React.FC = () => {
                 isLow ? 'text-amber-500' : 'text-text'
               }`}
             >
-              {p.stock_quantity}
+              {avail}
             </span>
+            {reserved > 0 && (
+              <span className="text-[10px] text-muted bg-surfaceAlt px-1.5 py-0.5 rounded border border-border" title="Held in pending approval orders">
+                ({reserved} reserved)
+              </span>
+            )}
             {isLow && (
               <span className="flex items-center gap-1 text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold">
                 <AlertTriangle className="w-3 h-3" /> Low Stock
               </span>
             )}
-            {isLow && isManager && (
+            {isLow && canAdjustStock && !p.is_deleted && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -200,32 +221,49 @@ export const ProductsPage: React.FC = () => {
       width: '120px',
       render: (p) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          {canAdjustStock && !p.is_deleted && (
+            <button
+              onClick={() => {
+                setAdjustingProduct(p);
+                setAdjustData({ movement_type: 'IN', quantity: 1, reason: '' });
+              }}
+              className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+              title="Adjust Stock"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+          )}
           {isManager && (
             <>
-              <button
-                onClick={() => {
-                  setAdjustingProduct(p);
-                  setAdjustData({ movement_type: 'IN', quantity: 1, reason: '' });
-                }}
-                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-                title="Adjust Stock"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleOpenEdit(p)}
-                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-                title="Edit Product"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setDeletingProduct(p)}
-                className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
-                title="Delete Product"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {p.is_deleted ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => restoreProductMutation.mutate(p.id)}
+                  isLoading={restoreProductMutation.isPending}
+                  leftIcon={<RotateCcw className="w-3 h-3" />}
+                  className="text-xs h-7 px-2"
+                >
+                  Restore
+                </Button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleOpenEdit(p)}
+                    className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+                    title="Edit Product"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeletingProduct(p)}
+                    className="p-1.5 rounded-full hover:bg-surfaceAlt text-muted hover:text-text transition-colors"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -287,13 +325,26 @@ export const ProductsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsLowStock(isLowStock ? undefined : true)}
-              className={`px-3 py-1.5 rounded-full text-body  border transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-caption border transition-colors ${
                 isLowStock
                   ? 'bg-primary text-primaryText border-primary/40'
                   : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
               }`}
             >
               Low Stock Only
+            </button>
+            <button
+              onClick={() => {
+                setIncludeDeleted(!includeDeleted);
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-full text-caption border transition-colors ${
+                includeDeleted
+                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                  : 'bg-surface text-muted border-border hover:bg-surfaceAlt'
+              }`}
+            >
+              {includeDeleted ? 'Showing Archived' : 'Show Archived'}
             </button>
           </div>
         }
