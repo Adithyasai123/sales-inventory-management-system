@@ -12,6 +12,7 @@ from app.core.exceptions import EntityNotFoundException, DuplicateResourceExcept
 from app.dependencies import get_current_user, require_role
 from app.models.customer import Customer
 from app.models.user import User, UserRole
+from app.repositories.base import handle_paginated_query
 from app.repositories.customer_repo import CustomerRepository
 from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse
 from app.schemas.common import PaginatedResponse, MessageResponse
@@ -33,24 +34,15 @@ def list_customers(
 ):
     """List customers with search, pagination, and sorting."""
     repo = CustomerRepository(db)
-    skip = (page - 1) * page_size
-    items, total = repo.list_customers(
-        skip=skip,
-        limit=page_size,
+    return handle_paginated_query(
+        repo.list_customers,
+        page=page,
+        page_size=page_size,
         search=search,
         is_active=is_active,
         include_deleted=include_deleted,
         sort_by=sort_by,
         sort_order=sort_order,
-    )
-    total_pages = math.ceil(total / page_size) if total > 0 else 1
-
-    return PaginatedResponse(
-        items=items,
-        total=total,
-        page=page,
-        page_size=page_size,
-        total_pages=total_pages,
     )
 
 

@@ -1,6 +1,5 @@
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc, asc
 from app.models.customer import Customer
 from app.repositories.base import BaseRepository
 
@@ -26,27 +25,15 @@ class CustomerRepository(BaseRepository[Customer]):
         sort_by: str = "name",
         sort_order: str = "asc",
     ) -> Tuple[List[Customer], int]:
-        query = self.db.query(Customer)
-        if not include_deleted:
-            query = query.filter(Customer.is_deleted == False)
-
-        if is_active is not None:
-            query = query.filter(Customer.is_active == is_active)
-
-        if search:
-            term = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    Customer.name.ilike(term),
-                    Customer.email.ilike(term),
-                    Customer.company.ilike(term),
-                    Customer.phone.ilike(term),
-                )
-            )
-
-        sort_col = getattr(Customer, sort_by, Customer.name)
-        query = query.order_by(desc(sort_col) if sort_order == "desc" else asc(sort_col))
-
-        total = query.count()
-        items = query.offset(skip).limit(limit).all()
-        return items, total
+        filters = {"is_active": is_active} if is_active is not None else None
+        return self.paginate(
+            skip=skip,
+            limit=limit,
+            search=search,
+            search_fields=["name", "email", "company", "phone"],
+            filters=filters,
+            include_deleted=include_deleted,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            default_sort_by="name",
+        )

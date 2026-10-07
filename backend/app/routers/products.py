@@ -14,6 +14,7 @@ from app.dependencies import get_current_user, require_role
 from app.models.product import Product
 from app.models.inventory import MovementType
 from app.models.user import User, UserRole
+from app.repositories.base import handle_paginated_query
 from app.repositories.product_repo import ProductRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.services.inventory_service import InventoryService
@@ -47,10 +48,11 @@ def list_products(
 ):
     """List products with catalog filtering, search, low-stock filter, and pagination."""
     repo = ProductRepository(db)
-    skip = (page - 1) * page_size
-    items, total = repo.list_products(
-        skip=skip,
-        limit=page_size,
+    return handle_paginated_query(
+        repo.list_products,
+        page=page,
+        page_size=page_size,
+        mapper=_map_product_response,
         search=search,
         category=category,
         is_low_stock=is_low_stock,
@@ -58,15 +60,6 @@ def list_products(
         include_deleted=include_deleted,
         sort_by=sort_by,
         sort_order=sort_order,
-    )
-    total_pages = math.ceil(total / page_size) if total > 0 else 1
-
-    return PaginatedResponse(
-        items=[_map_product_response(item) for item in items],
-        total=total,
-        page=page,
-        page_size=page_size,
-        total_pages=total_pages,
     )
 
 
