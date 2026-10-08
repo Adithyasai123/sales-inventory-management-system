@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     EMAILS_FROM_NAME: str = "SIMS Notifications"
     RESEND_API_KEY: str = ""
 
+    # Frontend URL for email action links & redirection
+    FRONTEND_URL: str = "https://sales-inventory-management-system-lyart.vercel.app"
+
     # Default Business Rules
     DEFAULT_APPROVAL_THRESHOLD: Decimal = Decimal("75000.00")
     CURRENCY_CODE: str = "INR"
