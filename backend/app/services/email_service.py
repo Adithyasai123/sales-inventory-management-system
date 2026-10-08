@@ -47,12 +47,18 @@ class EmailService:
             # 1. First priority: Resend HTTP API (HTTPS port 443 - works on Render, Vercel, and all cloud providers without SMTP port blocking)
             if settings.RESEND_API_KEY:
                 try:
-                    logger.info(f"Attempting live email delivery via Resend HTTP API to {to_email}...")
+                    # In Resend Free Sandbox mode (onboarding@resend.dev), emails can ONLY be sent to the verified account owner.
+                    # Redirect dummy seed emails (@sims.in / @sims.local) to EMAILS_FROM_EMAIL so all test emails land in inbox.
+                    actual_recipient = to_email
+                    if to_email.endswith("@sims.in") or to_email.endswith("@sims.local") or not ("@" in to_email and "." in to_email.split("@")[1]):
+                        actual_recipient = settings.EMAILS_FROM_EMAIL or "adithyasainulu@gmail.com"
+
+                    logger.info(f"Attempting live email delivery via Resend HTTP API to {actual_recipient} (original target: {to_email})...")
                     import httpx
                     resend_payload = {
                         "from": f"{settings.EMAILS_FROM_NAME} <onboarding@resend.dev>",
-                        "to": [to_email],
-                        "subject": subject,
+                        "to": [actual_recipient],
+                        "subject": subject if actual_recipient == to_email else f"{subject} [For: {to_email}]",
                         "html": html_body,
                     }
                     res = httpx.post(
