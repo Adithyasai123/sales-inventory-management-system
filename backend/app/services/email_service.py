@@ -233,7 +233,7 @@ class EmailService:
             formatted_tax=formatted_tax,
             tax_rate=tax_rate_str,
             items=items or [],
-            review_url="http://localhost:5173/approvals",
+            review_url=f"{settings.FRONTEND_URL.rstrip('/')}/approvals",
             date=datetime.now().strftime("%b %d, %Y • %I:%M %p"),
         )
 
@@ -306,7 +306,7 @@ class EmailService:
             decision_color=decision_color,
             decision_badge_bg=decision_badge_bg,
             decision_badge_border=decision_badge_border,
-            orders_url="http://localhost:5173/orders",
+            orders_url=f"{settings.FRONTEND_URL.rstrip('/')}/orders",
             date=datetime.now().strftime("%b %d, %Y • %I:%M %p"),
         )
 
