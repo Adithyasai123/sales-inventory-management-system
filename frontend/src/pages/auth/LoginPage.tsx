@@ -252,22 +252,7 @@ export const LoginPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => handleAutoLogin('adithyasainulu@gmail.com', 'Manager@123456')}
-                disabled={isLoading}
-                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
-              >
-                <div className="w-7 h-7 rounded-md bg-accent/15 text-accent flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Manager</div>
-                  <div className="text-[10px] text-muted truncate">Adithya</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAutoLogin('sita.reddy@sims.in', 'Sales@123456')}
+                onClick={() => handleAutoLogin('sales@sims.in', 'Sales@123456')}
                 disabled={isLoading}
                 className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
               >
@@ -276,7 +261,22 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Sales Rep</div>
-                  <div className="text-[10px] text-muted truncate">Sita Reddy</div>
+                  <div className="text-[10px] text-muted truncate">sales@sims.in</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('manager@sims.in', 'Manager@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Manager</div>
+                  <div className="text-[10px] text-muted truncate">manager@sims.in</div>
                 </div>
               </button>
 
@@ -291,7 +291,7 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Admin</div>
-                  <div className="text-[10px] text-muted truncate">Full Access</div>
+                  <div className="text-[10px] text-muted truncate">admin@sims.in</div>
                 </div>
               </button>
 
@@ -306,7 +306,7 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Warehouse</div>
-                  <div className="text-[10px] text-muted truncate">Stock Restock</div>
+                  <div className="text-[10px] text-muted truncate">warehouse@sims.in</div>
                 </div>
               </button>
 
@@ -321,22 +321,22 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Finance</div>
-                  <div className="text-[10px] text-muted truncate">Audit Reports</div>
+                  <div className="text-[10px] text-muted truncate">finance@sims.in</div>
                 </div>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleAutoLogin('sales@sims.in', 'Sales@123456')}
+                onClick={() => handleAutoLogin('adithyasainulu@gmail.com', 'Manager@123456')}
                 disabled={isLoading}
                 className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
               >
-                <div className="w-7 h-7 rounded-md bg-sky-500/15 text-sky-500 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-md bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
                   <Briefcase className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Sales HQ</div>
-                  <div className="text-[10px] text-muted truncate">Amit Verma</div>
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Adithya (Mgr)</div>
+                  <div className="text-[10px] text-muted truncate">adithyasainulu@...</div>
                 </div>
               </button>
             </div>
