@@ -7,6 +7,10 @@ import { SimsLogo } from '../../components/ui/SimsLogo';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import {
   ShieldCheck,
+  UserCheck,
+  Briefcase,
+  Boxes,
+  Coins,
   Lock,
   Mail,
   Eye,
@@ -14,6 +18,7 @@ import {
   Layers,
   TrendingUp,
   AlertCircle,
+  Zap,
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -36,6 +41,18 @@ export const LoginPage: React.FC = () => {
     setError(null);
     try {
       await login({ email, password });
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Login failed. Please check your credentials.');
+    }
+  };
+
+  const handleAutoLogin = async (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
+    try {
+      await login({ email: demoEmail, password: demoPass });
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Login failed. Please check your credentials.');
@@ -222,6 +239,108 @@ export const LoginPage: React.FC = () => {
               Login
             </Button>
           </form>
+
+          {/* Quick 1-Click Auto Login Buttons */}
+          <div className="pt-6 mt-6 border-t border-border flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-accent" /> One-Click Auto Login
+              </span>
+              <span className="text-[10px] text-muted">Click any role to test instantly</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('adithyasainulu@gmail.com', 'Manager@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Manager</div>
+                  <div className="text-[10px] text-muted truncate">Adithya</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('sita.reddy@sims.in', 'Sales@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Sales Rep</div>
+                  <div className="text-[10px] text-muted truncate">Sita Reddy</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('admin@sims.in', 'Admin@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-purple-500/15 text-purple-500 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Admin</div>
+                  <div className="text-[10px] text-muted truncate">Full Access</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('warehouse@sims.in', 'Warehouse@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                  <Boxes className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Warehouse</div>
+                  <div className="text-[10px] text-muted truncate">Stock Restock</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('finance@sims.in', 'Finance@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+                  <Coins className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Finance</div>
+                  <div className="text-[10px] text-muted truncate">Audit Reports</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAutoLogin('sales@sims.in', 'Sales@123456')}
+                disabled={isLoading}
+                className="flex items-center gap-2 p-2 rounded-lg bg-surfaceAlt/80 hover:bg-surfaceAlt border border-border hover:border-accent text-left transition-all group disabled:opacity-50"
+              >
+                <div className="w-7 h-7 rounded-md bg-sky-500/15 text-sky-500 flex items-center justify-center shrink-0">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-text group-hover:text-accent truncate">Sales HQ</div>
+                  <div className="text-[10px] text-muted truncate">Amit Verma</div>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Clean Footer Notice */}
