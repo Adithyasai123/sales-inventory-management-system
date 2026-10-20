@@ -93,26 +93,28 @@ docker compose up --build
 
 ---
 
-## 4. Default Seed Credentials
+## 4. Default Seed Credentials (Role-Wise)
 
 The database is seeded idempotently on first startup with pre-configured enterprise roles:
 
-| Role | Email Address | Password | Permissions |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@sims.in` | `Admin@123456` | Full administrative control, user management, settings |
-| **Manager / Super Admin** | `manager@sims.in` | `Manager@123456` | Review/approve orders, adjust stock, manage catalog, settings |
-| **Warehouse Lead** | `warehouse@sims.in` | `Warehouse@123456` | Physical stock adjustments, inward restock, movement ledger, fulfillment |
-| **Finance / Auditor** | `finance@sims.in` | `Finance@123456` | Order audit, tax invoices, email logs, transaction statistics (read-only stock) |
-| **Sales Rep** | `sales@sims.in` | `Sales@123456` | Create sales orders, view catalog, register customers |
+| Role | Name | Email Address | Password | Permissions & Testing Scope |
+| :--- | :--- | :--- | :--- | :--- |
+| **Manager (Regional Approver)** | Adithya | `adithyasainulu@gmail.com` | `Manager@123456` | Review/approve orders, restock inventory, manage Hyderabad circle |
+| **Sales Representative** | Sita Reddy | `sita.reddy@sims.in` | `Sales@123456` | Create sales orders, view catalog & customers (Reports to Adithya) |
+| **Admin** | Suresh Raina | `admin@sims.in` | `Admin@123456` | Full administrative control, user management, system settings |
+| **Super Admin / GM** | Rajesh Sharma | `manager@sims.in` | `Manager@123456` | Global managerial review/approval, all circles, settings |
+| **Warehouse Lead** | Ramesh Kumar | `warehouse@sims.in` | `Warehouse@123456` | Physical stock adjustments, inward restock, movement ledger |
+| **Finance / Auditor** | Neha Gupta | `finance@sims.in` | `Finance@123456` | Order audit, tax invoices, email logs, transaction statistics |
+| **Sales Rep (HQ)** | Amit Verma | `sales@sims.in` | `Sales@123456` | Create sales orders, view catalog (Reports to Super Admin) |
 
-*Additional seeded regional managers include `priya.manager@sims.in` and `vikram.manager@sims.in` (password `Manager@123456`).*
+*Additional seeded regional managers include `priya.manager@sims.in` (Bangalore) and `vikram.manager@sims.in` (Mumbai) with password `Manager@123456`.*
 
 ---
 
 ## 5. End-to-End Walkthrough: Order Creation & Approval Flow
 
 ### Step 1: Place a High-Value Order as a Sales Rep
-1. Navigate to `http://localhost:3000` and sign in with `sales@sims.in` and password `Sales@123456`.
+1. Navigate to `http://localhost:3000` and sign in as **Sales Rep Sita Reddy** (`sita.reddy@sims.in` or `sales@sims.in`) with password `Sales@123456`.
 2. Go to **Sales Orders** → **Create Order**.
 3. Select customer **Reliance Retail Ltd**.
 4. Add line items:
@@ -126,10 +128,11 @@ The database is seeded idempotently on first startup with pre-configured enterpr
 1. Open your browser and navigate to the **Mailpit Web UI** at `http://localhost:8025`.
 2. You will see an email with subject:
    `[Action Required] Order ORD-YYYYMMDD-XXXX Requires Manager Approval`
-3. The email details the customer name, order number, line items total in `₹`, and requesting sales representative.
+3. Notice that the notification was automatically routed to Regional Manager **Adithya** (`adithyasainulu@gmail.com`).
+4. The email details the customer name, order number, line items total in `₹`, and requesting sales representative.
 
 ### Step 3: Manager Review & Approval
-1. Log out and log in as **Manager** (`manager@sims.in` / `Manager@123456`).
+1. Log out and log in as **Manager Adithya** (`adithyasainulu@gmail.com` / `Manager@123456`) or Super Admin (`manager@sims.in`).
 2. Navigate to the **Approvals** screen in the sidebar (notice the badge indicator `1`).
 3. Click **Review** on the pending order to inspect line items in the SlideOver drawer.
 4. Click **Approve**.
@@ -140,7 +143,7 @@ The database is seeded idempotently on first startup with pre-configured enterpr
 1. The order status immediately transitions to `COMPLETED`.
 2. Under **Products**, inspect `PHONE-APP-15P`: available and warehouse stock has been decremented by 1 unit and reservation released.
 3. Under **Inventory** → **Movement Ledger**: an immutable ledger record of type `OUT` is visible with the reference order number and the resulting `balance_after`.
-4. In Mailpit (`http://localhost:8025`), inspect the second email sent to `sales@sims.in` confirming:
+4. In Mailpit (`http://localhost:8025`), inspect the second email sent to the sales representative (`sita.reddy@sims.in` / `sales@sims.in`) confirming:
    `[Order Update] Your Order ORD-YYYYMMDD-XXXX has been APPROVED`.
 
 ---

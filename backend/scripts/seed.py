@@ -328,7 +328,15 @@ def seed_database() -> None:
 
         # Nested employees reporting to Team Leads or directly to Managers
         employees_data = [
-            # Hyderabad team (total 5 employees under Adithya's branch: 1 Lead + 4 sales reps)
+            # Hyderabad team (sales reps reporting directly to Regional Manager Adithya)
+            {
+                "email": "sita.reddy@sims.in",
+                "full_name": "Sita Reddy",
+                "password": "Sales@123456",
+                "branch": "Hyderabad",
+                "manager_id": adithya_mgr.id,
+                "created_by_id": adithya_mgr.id,
+            },
             {
                 "email": "hyd.sales2@sims.in",
                 "full_name": "Sita Reddy",
